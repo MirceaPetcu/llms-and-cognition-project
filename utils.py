@@ -3,10 +3,15 @@ import pickle
 import argparse
 import logging
 from typing import List, Any, Tuple, Union
+from datetime import datetime
+
 
 def setup_logger(file_name: str = 'script.log') -> logging.Logger:
     logger = logging.getLogger("script_logger")
     logger.setLevel(logging.INFO)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    file_name = file_name + f"_{timestamp}.log"
+    os.makedirs('logs', exist_ok=True)
     handler = logging.FileHandler(os.path.join('logs', file_name))
     handler.setLevel(logging.INFO)
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')

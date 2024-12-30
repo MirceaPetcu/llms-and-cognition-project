@@ -88,7 +88,7 @@ class Model:
                 sample[f'embedding_{j}_last'] = emb[-1].squeeze().cpu().to(torch.float32).numpy()
                 sample[f'tokens_{j}'] = emb.squeeze().cpu().to(torch.float32).numpy()
 
-            sample['final_embeddings'] = outputs['last_hidden_state'].mean(dim=1).squeeze().cpu().to(torch.float32).numpy()
+            sample['final_embeddings_mean'] = outputs['last_hidden_state'].mean(dim=1).squeeze().cpu().to(torch.float32).numpy()
             sample['final_embeddings_last'] = outputs['last_hidden_state'][-1].squeeze().cpu().to(torch.float32).numpy()
             sample['tokens_final_embeddings'] = outputs['last_hidden_state'].squeeze().cpu().to(torch.float32).numpy()
             return sample
