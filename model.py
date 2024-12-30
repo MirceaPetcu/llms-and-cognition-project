@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Union
 import torch
-from transformers import AutoModel, AutoTokenizer, BitsAndBytesConfig, AutoModelForCausalLM
+from transformers import AutoModel, AutoTokenizer, BitsAndBytesConfig, AutoModelForCausalLM, AwqConfig
 import logging
 
 
@@ -34,6 +34,9 @@ class Model:
                 self.quantization_config = None
                 self.torch_dtype = torch.bfloat16
             # TODO(cezieu/maria19ioana): Add support for other quantization types (e.g. gptq, awq, llama.cpp etc.)
+        elif self.weights_dtype.lower() == 'awq': #added awq support
+                self.quantization_config = AwqConfig(bits=4)
+                self.torch_dtype = torch.float16
         else:
                 self.logger.error(f"Quantization type {self.weights_dtype} not supported")
                 raise ValueError(f"Quantization type {self.weights_dtype} not supported")
