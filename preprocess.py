@@ -17,6 +17,7 @@ from models_ids import QWEN_MODELS, GEMMA_MODELS
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Process some integers.')
+    parser.add_argument('--hf_token', type=str, default=None, help='Huggingface token')
     parser.add_argument('--model_family', type=str, default='qwen', help='Model family')
     parser.add_argument('--data', type=str, default='bold_response_LH.csv', help='data file')
     parser.add_argument('--models', type=List[str], default=[],
@@ -34,12 +35,12 @@ def main(args: argparse.Namespace):
     logger = setup_logger(f'{args.data}_{args.model_family}_{args.dtype}_{args.inference_type}_{args.task}.log')
     df = pd.read_csv(os.path.join('data', args.data))
     output_dir_name = get_output_dir(args, logger)
-    login(os.getenv('HF_TOKEN'))
+    login(args.hf_token)
     logger.info("Starting processing")
     if args.model_family == 'qwen':
-        models = QWEN_MODELS
+        models = QWEN_MODELS[::-1]
     elif args.model_family == 'gemma':
-        models = GEMMA_MODELS
+        models = GEMMA_MODELS[::-1]
     for model_id in models:
         logger.info(f"Processing model {model_id}")
         model = Model(args.dtype, args.inference_type, model_id, args.task, logger)
