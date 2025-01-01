@@ -10,7 +10,7 @@ import pickle
 import argparse
 import logging
 from model import Model
-from utils import prepare_input, prepare_sample, get_output_dir, save_processed_dataset, setup_logger
+from utils import prepare_input, prepare_sample, get_output_dir, save_processed_dataset, setup_logger, free_kaggle_disk_space
 from typing import List, Any, Tuple, Union
 from models_ids import QWEN_MODELS, GEMMA_MODELS
 
@@ -56,8 +56,9 @@ def main(args: argparse.Namespace):
                 new_df.append(sample)
             except Exception as e:
                 logger.error(f"Error processing row {i}: {e}")
-        save_processed_dataset(output_dir_name, model_id, new_df, logger)
         model.free_memory()
+        free_kaggle_disk_space(logger)
+        save_processed_dataset(output_dir_name, model_id, new_df, logger)
     logger.info(f"Processing completed for model")
 
 

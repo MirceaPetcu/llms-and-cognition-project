@@ -2,6 +2,7 @@ from typing import Any, Dict, List, Union
 import torch
 from transformers import AutoModel, AutoTokenizer, BitsAndBytesConfig, AutoModelForCausalLM, AwqConfig
 import logging
+import gc
 
 
 class Model:
@@ -100,8 +101,10 @@ class Model:
             raise ValueError(f"Error processing output embeddings: {e}")
     
     def free_memory(self):
-        self.model.to('cpu')
+        if self.weights_dtype in ('float16', 'bfloat16', 'float32'):
+            self.model.to('cpu')
         del self.model
         del self.tokenizer
         torch.cuda.empty_cache()
+        gc.collect()
         self.logger.info("Memory freed")

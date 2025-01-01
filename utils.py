@@ -49,7 +49,14 @@ def save_processed_dataset(output_dir_name: str, model_id: str, data: List[dict]
     output_file_name = f"{model_id.split('/')[1]}.pkl"
     try:
         with open(os.path.join(output_dir_name, output_file_name), 'wb') as f:
-            pickle.dump(data, f)
+            pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
         logger.info(f"Processed dataset saved: {output_file_name}")
     except Exception as e:
         logger.error(f"Error saving the processed dataset: {e}")
+
+def free_kaggle_disk_space(logger: logging.Logger) -> None:
+    try:
+        os.system('rm -rf /root/.cache/huggingface/hub/*')
+        logger.info("Kaggle disk space freed")
+    except Exception as e:
+        logger.error(f"Error freeing Kaggle disk space: {e}")
