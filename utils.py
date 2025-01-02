@@ -39,7 +39,7 @@ def prepare_sample(text: str, targets: Any, id: Union[str,int], word = None) -> 
 
 
 def get_output_dir(args: argparse.Namespace, logger: logging.Logger) -> str:
-    output_dir_name = f"{args.data}_{args.model_family}_{args.dtype}_{args.inference_type}_{args.task}"
+    output_dir_name = f"{args.data}_{args.dtype}_{args.inference_type}_{args.task}"
     os.makedirs(output_dir_name, exist_ok=True)
     logger.info(f"Output directory created: {output_dir_name}")
     return output_dir_name
