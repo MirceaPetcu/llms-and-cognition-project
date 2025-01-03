@@ -2,6 +2,7 @@ from typing import Any, Dict, List, Union
 import torch
 from transformers import AutoModel, AutoTokenizer, BitsAndBytesConfig, AutoModelForCausalLM, AwqConfig
 import logging
+import gc
 
 
 class Model:
@@ -89,19 +90,23 @@ class Model:
             for j, emb in enumerate(outputs['hidden_states']):
                 sample[f'embeddgins_{j}_mean'] = emb.mean(dim=1).squeeze().cpu().to(torch.float32).numpy()
                 sample[f'embedding_{j}_last'] = emb[-1].squeeze().cpu().to(torch.float32).numpy()
-                sample[f'tokens_{j}'] = emb.squeeze().cpu().to(torch.float32).numpy()
+                sample[f'tokens_{j}'] = emb.squeeze().cpu().to(torch.float32).numpy() \
+                                        if self.task == 'word' else None
 
             sample['final_embeddings_mean'] = outputs['last_hidden_state'].mean(dim=1).squeeze().cpu().to(torch.float32).numpy()
             sample['final_embeddings_last'] = outputs['last_hidden_state'][-1].squeeze().cpu().to(torch.float32).numpy()
-            sample['tokens_final_embeddings'] = outputs['last_hidden_state'].squeeze().cpu().to(torch.float32).numpy()
+            sample['tokens_final_embeddings'] = outputs['last_hidden_state'].squeeze().cpu().to(torch.float32).numpy() \
+                                                if self.task == 'word' else None
             return sample
         except Exception as e:
             self.logger.error(f"Error processing output embeddings: {e}")
             raise ValueError(f"Error processing output embeddings: {e}")
     
     def free_memory(self):
-        self.model.to('cpu')
+        if self.weights_dtype in ('float16', 'bfloat16', 'float32'):
+            self.model.to('cpu')
         del self.model
         del self.tokenizer
         torch.cuda.empty_cache()
+        gc.collect()
         self.logger.info("Memory freed")
