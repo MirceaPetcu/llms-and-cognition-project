@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Union
 import torch
-from transformers import AutoModel, AutoTokenizer, BitsAndBytesConfig, AutoModelForCausalLM, AwqConfig
+from transformers import AutoModel, AutoTokenizer, BitsAndBytesConfig, AutoModelForCausalLM, AwqConfig, GPTQConfig
 import logging
 import gc
 
@@ -35,9 +35,18 @@ class Model:
                 self.quantization_config = None
                 self.torch_dtype = torch.bfloat16
             # TODO(cezieu/maria19ioana): Add support for other quantization types (e.g. gptq, awq, llama.cpp etc.)
-        elif self.weights_dtype.lower() == 'awq': #added awq support
+        elif self.weights_dtype.lower() == 'awq': #incomplete awq 
                 self.quantization_config = AwqConfig(bits=4)
                 self.torch_dtype = torch.float16
+        elif self.weights_dtype.lower() == 'gptq': #added gptq
+            # Create the GPTQ configuration
+            self.quantization_config = GPTQConfig(
+                bits=4,
+                dataset="c4",
+                tokenizer=AutoTokenizer.from_pretrained(self.model_id),
+                block_name_to_quantize="layers",  # Accurate for qwen models (I think, from what i see , the "layers" block has all layers of interest
+            )
+            self.torch_dtype = torch.float16  
         else:
                 self.logger.error(f"Quantization type {self.weights_dtype} not supported")
                 raise ValueError(f"Quantization type {self.weights_dtype} not supported")
