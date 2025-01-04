@@ -97,12 +97,14 @@ class Model:
     def process_output_embeddings(self, outputs, sample: dict) -> dict:
         try:
             for j, emb in enumerate(outputs['hidden_states']):
-                sample[f'embeddgins_{j}_mean'] = emb.mean(dim=1).squeeze().cpu().to(torch.float32).numpy()
+                sample[f'embeddgins_{j}_mean'] = emb.mean(dim=1).squeeze().cpu().to(torch.float32).numpy() \
+                                            if self.task == 'sentence' else None
                 sample[f'embedding_{j}_last'] = emb[-1].squeeze().cpu().to(torch.float32).numpy()
                 sample[f'tokens_{j}'] = emb.squeeze().cpu().to(torch.float32).numpy() \
                                         if self.task == 'word' else None
-
-            sample['final_embeddings_mean'] = outputs['last_hidden_state'].mean(dim=1).squeeze().cpu().to(torch.float32).numpy()
+            # final embeddings    
+            sample['final_embeddings_mean'] = outputs['last_hidden_state'].mean(dim=1).squeeze().cpu().to(torch.float32).numpy() \
+                                        if self.task == 'sentence' else None
             sample['final_embeddings_last'] = outputs['last_hidden_state'][-1].squeeze().cpu().to(torch.float32).numpy()
             sample['tokens_final_embeddings'] = outputs['last_hidden_state'].squeeze().cpu().to(torch.float32).numpy() \
                                                 if self.task == 'word' else None

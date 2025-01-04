@@ -1,8 +1,9 @@
-torch
-pandas
-transformers
-datasets
-huggingface_hub
+torch==2.4.1
+pandas==2.0.3
+transformers==4.46.3
+datasets==3.1.0
+huggingface_hub==0.27.0
+bitsandbytes==0.45.0
 accelerate 
 optimum
 auto-gptq
