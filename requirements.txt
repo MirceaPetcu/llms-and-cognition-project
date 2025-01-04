@@ -3,3 +3,6 @@ pandas
 transformers
 datasets
 huggingface_hub
+accelerate 
+optimum
+auto-gptq
