@@ -20,7 +20,7 @@ def parse_args():
     parser.add_argument('--data_keyword', type=str, default='multils_test_all_lcp_labels',
                         help='data keyword')
     parser.add_argument('--text_column', type=str, default='context', help='text column')
-    parser.add_argument('--target_columns', type=List[str], default=['complexity'], help='target columns')
+    parser.add_argument('--target_column', type=str, default=['complexity'], help='target column')
     parser.add_argument('--lang_column', type=str, default=None, help='language column')
     parser.add_argument('--id_column', type=str, default='id', help='id column')
     parser.add_argument('--word_column', type=str, default='target', help='word column')

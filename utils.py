@@ -24,7 +24,7 @@ def setup_logger(file_name: str = 'script.log') -> logging.Logger:
 def prepare_input(input, args: argparse.Namespace, logger: logging.Logger = None) -> Tuple[str, List[any]]:
     if args.data.split('.')[-1] in ('csv', 'tsv'):
         text = args.additional_prompt + input[args.text_column] if args.additional_prompt else input[args.text_column]
-        targets = [input[col] for col in args.target_columns]
+        targets = input[args.target_column]
         return text, targets
     else:
         logger.error(f"Dataset type not supported")
