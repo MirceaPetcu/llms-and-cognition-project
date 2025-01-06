@@ -28,6 +28,7 @@ def parse_args():
     parser.add_argument('--inference_type', type=str, default='forward', help='inference type')
     parser.add_argument('--task', type=str, default='word', choices=['sentence', 'word'], help='sentence or word')
     parser.add_argument('--additional_prompt', type=str, default=None, help='additional prompt')
+    parser.add_argument('--gguf_filename', type=str, default=None, help='gguf filename to load from')
     return parser.parse_args()
 
 
@@ -45,29 +46,27 @@ def main(args: argparse.Namespace):
     output_dir_name = get_output_dir(args, logger)
     logger.info("Starting processing")
     logger.info(f"Processing model {args.model}")
-    model = Model(args.dtype, args.inference_type, args.model, args.task, logger)
+    model = Model(args.dtype, args.inference_type, args.model, args.task, args.gguf_filename, logger)
     logger.info(f"Model {args.model} loaded successfully")
     processed_dataset = []
     range_data =  (0, 1000)
     for i, row in tqdm(df.iterrows(), total=len(df)):
-        try:
-            if i >= range_data[1]:
-                save_processed_dataset(output_dir_name, args.model, processed_dataset, range_data, logger)
-                range_data = (range_data[1], range_data[1]+1000)
-                del processed_dataset
-                processed_dataset = []
-                gc.collect()
-            text, targets = prepare_input(row, args=args, logger=logger)
-            sample = prepare_sample(text, targets, row, args=args)
-            outputs = model.inference(text)
-            sample = model.process_output_embeddings(outputs, sample)
-            processed_dataset.append(sample)
-        except Exception as e:
-            logger.error(f"Error processing row {i}: {e}")
+        if i >= range_data[1]:
+            save_processed_dataset(output_dir_name, args.model, processed_dataset, range_data, logger)
+            range_data = (range_data[1], range_data[1]+1000)
+            del processed_dataset
+            processed_dataset = []
+            gc.collect()
+        text, targets = prepare_input(row, args=args, logger=logger)
+        sample = prepare_sample(text, targets, row, args=args)
+        outputs, nth_tokens = model.inference(text, word_position=sample.get('nth_word', None))
+        sample['nth_tokens'] = nth_tokens if nth_tokens is not None else None
+        sample = model.process_output_embeddings(outputs, sample)
+        processed_dataset.append(sample)
     model.free_memory()
     free_kaggle_disk_space(logger)
     save_processed_dataset(output_dir_name, args.model, processed_dataset, (range_data[0], i), logger)
-    logger.info(f"Processing completed for model")
+    logger.info(f"Processing completed for model {args.model}")
 
 
 if __name__ == '__main__':

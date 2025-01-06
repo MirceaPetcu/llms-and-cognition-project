@@ -5,6 +5,8 @@ import logging
 from typing import List, Any, Tuple, Union
 from datetime import datetime
 import pandas as pd
+from nltk.tokenize import word_tokenize
+import yaml
 
 
 def setup_logger(file_name: str = 'script.log') -> logging.Logger:
@@ -31,13 +33,14 @@ def prepare_input(input, args: argparse.Namespace, logger: logging.Logger = None
         raise ValueError(f"Dataset type not supported")
 
 
-def prepare_sample(text: str, targets: Any, entry: pd.Series,
-                   args: argparse.Namespace) -> dict:
+def prepare_sample(text: str, targets: Any, entry: pd.Series, args: argparse.Namespace) -> dict:
     sample = {'text': text, 'targets': targets, 'id': entry[args.id_column]}
     if args.task == 'word':
         sample['word'] = entry[args.word_column]
-    if args.lang_column:
-        sample['lang'] = entry[args.lang_column]
+        words = word_tokenize(entry[args.text_column])
+        sample['nth_word'] = words.index(entry[args.word_column])
+    sample['lang'] = entry[args.lang_column] if args.lang_column else None
+
     return sample
 
 
@@ -65,3 +68,14 @@ def free_kaggle_disk_space(logger: logging.Logger) -> None:
         logger.info("Kaggle disk space freed")
     except Exception as e:
         logger.error(f"Error freeing Kaggle disk space: {e}")
+
+
+def get_processed_dataset(data_path: str):
+    with open(data_path, 'rb') as f:
+        data = pickle.load(f)
+    return data
+
+
+def save_preduction_results(results: dict, path: str) -> None:
+    with open(path, 'w') as f:
+        yaml.dump(results, f, default_flow_style=False)
