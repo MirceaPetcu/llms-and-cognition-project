@@ -20,8 +20,7 @@ class Model:
         self.logger = logger
         self.gguf_filename = gguf_filename
         self._get_quantization_config()
-        self.model = self._load_model()
-        print(self.model)
+        self._load_model()
 
     def _get_quantization_config(self):
         if self.weights_dtype.lower() == 'bnb':
@@ -29,7 +28,7 @@ class Model:
                                                             bnb_4bit_compute_dtype=torch.float16,
                                                             bnb_4bit_use_double_quant=True,
                                                             bnb_4bit_quant_type='nf4')
-            self.torch_dtype = torch.float32
+            self.torch_dtype = torch.float16
         elif self.weights_dtype.lower() == 'float32':
             self.quantization_config = None
             self.torch_dtype = torch.float32
@@ -41,18 +40,18 @@ class Model:
                 self.torch_dtype = torch.bfloat16
         elif self.weights_dtype.lower() in ('awq', 'gptq'):
             self.quantization_config = None
-            self.torch_dtype = torch.float32
+            self.torch_dtype = torch.float16
         elif self.weights_dtype.lower() == 'gguf':
             raise ValueError("GGUF not supported")
         elif self.weights_dtype.lower() == '1bit':
             # not sure if is supported - maybe need to install transformers from source
             self.quantization_config = None
-            self.torch_dtype = torch.float32
+            self.torch_dtype = torch.float16
         else:
             self.logger.error(f"Quantization type {self.weights_dtype} not supported")
             raise ValueError(f"Quantization type {self.weights_dtype} not supported")
 
-    def _load_model(self) -> Any:
+    def _load_model(self) -> None:
         model_args = {'low_cpu_mem_usage': True, 'device_map': 'auto', 'output_hidden_states': True, 'torch_dtype': self.torch_dtype}
         if self.quantization_config is not None:
             model_args['quantization_config'] = self.quantization_config
@@ -61,16 +60,16 @@ class Model:
         print(model_args)
         try:
             if self.inference_type == 'forward':
-                model = AutoModelForCausalLM.from_pretrained(self.model_id, **model_args).eval()
-                model = model.model
+                self.model = AutoModelForCausalLM.from_pretrained(self.model_id, **model_args).eval()
+                self.model = self.model.model
             elif self.inference_type == 'generate':
-                model = AutoModelForCausalLM.from_pretrained(self.model_id, **model_args).eval()
+                self.model = AutoModelForCausalLM.from_pretrained(self.model_id, **model_args).eval()
             self.tokenizer = AutoTokenizer.from_pretrained('meta-llama/Meta-Llama-3-8B-Instruct' if \
                                                            self.weights_dtype.lower() == '1bit'  else self.model_id,
                                                            use_fast=True)
             self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
             self.logger.info(f"Model {self.model_id} loaded successfully")
-            return model
+            print(self.model)
         except Exception as e:
             self.logger.error(f"Error loading model {self.model_id}: {e}")
             raise Exception(f"Error loading model {self.model_id}: {e}")
