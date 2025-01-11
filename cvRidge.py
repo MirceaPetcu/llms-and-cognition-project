@@ -91,11 +91,13 @@ def cv(x: np.ndarray,
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42)
     x_train, x_test = normalize_data(x_train, x_test, normalization)
     model.fit(x_train, y_train)
+    '''
     results = model.cv_results_['mean_test_score']
     plt.plot(np.log(alphas),-results)
     plt.xlabel("Log10(Alpha)")
     plt.ylabel('test MSE')
     plt.show()
+    '''
     y_pred = model.predict(x_test)
     score=mean_squared_error(y_test, y_pred)
     mae=mean_absolute_error(y_test, y_pred)
@@ -103,10 +105,6 @@ def cv(x: np.ndarray,
     r2=r2_score(y_test, y_pred)
     print(model.best_params_)
     return score,mae, pearson, r2
-
-
-
-
 
 if __name__ == '__main__':
     args = parse_args()
