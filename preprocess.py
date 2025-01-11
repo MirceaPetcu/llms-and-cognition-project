@@ -21,7 +21,7 @@ def parse_args():
                         help='data keyword')
     parser.add_argument('--text_column', type=str, default='context', help='text column')
     parser.add_argument('--target_column', type=str, default=['complexity'], help='target column')
-    parser.add_argument('--lang_column', type=str, default=None, help='language column')
+    parser.add_argument('--lang_column', type=str, default='language', help='language column')
     parser.add_argument('--id_column', type=str, default='id', help='id column')
     parser.add_argument('--word_column', type=str, default='target', help='word column')
     parser.add_argument('--dtype', type=str, default='bnb', help='quantization type')
@@ -50,6 +50,7 @@ def main(args: argparse.Namespace):
     logger.info(f"Model {args.model} loaded successfully")
     processed_dataset = []
     range_data =  (0, 1000)
+    x = 0
     for i, row in tqdm(df.iterrows(), total=len(df)):
         if i >= range_data[1]:
             save_processed_dataset(output_dir_name, args.model, processed_dataset, range_data, logger)
@@ -61,9 +62,13 @@ def main(args: argparse.Namespace):
         sample = prepare_sample(text, targets, row, args=args)
         outputs, nth_tokens = model.inference(text, word_position=sample.get('nth_word', None))
         sample['nth_tokens'] = nth_tokens if nth_tokens is not None else None
+        if args.task == 'word' and nth_tokens is None:
+            sample['nth_tokens'] = (max(0, sample.get('nth_word', None)-2), sample.get('nth_word', None))
+            x += 1
         sample = model.process_output_embeddings(outputs, sample)
         processed_dataset.append(sample)
     model.free_memory()
+    print(x)
     free_kaggle_disk_space(logger)
     save_processed_dataset(output_dir_name, args.model, processed_dataset, (range_data[0], i), logger)
     logger.info(f"Processing completed for model {args.model}")

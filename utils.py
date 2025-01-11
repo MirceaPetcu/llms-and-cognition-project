@@ -7,6 +7,7 @@ from datetime import datetime
 import pandas as pd
 from nltk.tokenize import word_tokenize
 import yaml
+import re
 
 
 def setup_logger(file_name: str = 'script.log') -> logging.Logger:
@@ -35,10 +36,15 @@ def prepare_input(input, args: argparse.Namespace, logger: logging.Logger = None
 
 def prepare_sample(text: str, targets: Any, entry: pd.Series, args: argparse.Namespace) -> dict:
     sample = {'text': text, 'targets': targets, 'id': entry[args.id_column]}
+    regex_patterns = {'english': r"\w+['’]?\w*|[^\w\s]", 'french': r"\w+|[^\w\s]", 'german': r"\w+['’]?\w*|[^\w\s]",
+                      'spanish':  r"\w+['’]?\w*|[^\w\s]", 'italian': r"\w+['’]?\w*|[^\w\s]", 'dutch': r"\w+['’]?\w*|[^\w\s]",}
     if args.task == 'word':
         sample['word'] = entry[args.word_column]
-        words = word_tokenize(entry[args.text_column])
-        sample['nth_word'] = words.index(entry[args.word_column])
+        if args.lang_column == 'english':
+            words = word_tokenize(entry[args.text_column])
+        else:
+            words = re.findall(r'\w+(?:-\w+)*|[^\w\s]', entry[args.text_column].lower())
+        sample['nth_word'] = words.index(entry[args.word_column].lower())
     sample['lang'] = entry[args.lang_column] if args.lang_column else None
 
     return sample
@@ -77,5 +83,6 @@ def get_processed_dataset(data_path: str):
 
 
 def save_preduction_results(results: dict, path: str) -> None:
-    with open(path, 'w') as f:
+    os.makedirs('results', exist_ok=True)
+    with open(os.path.join('results', path), 'w') as f:
         yaml.dump(results, f, default_flow_style=False)
