@@ -135,7 +135,7 @@ if __name__ == '__main__':
 
         elif args.task == 'word':
             # nth tokens embeddings prediction
-            x = np.array([entry[f'tokens_{layer}'][entry['nth_tokens'][0-1]: entry['nth_tokens'][1+1]].mean(axis=0) for entry in data])
+            x = np.array([entry[f'tokens_{layer}'][entry['nth_tokens'][0-3]: entry['nth_tokens'][1+3]].mean(axis=0) for entry in data])
             y = np.array([entry['targets'] for entry in data])
             y = y.astype(np.float32)
             mse, mae, pearson, r2 = cv(x, y, args.model, args.normalization)
