@@ -5,6 +5,7 @@ from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.preprocessing import StandardScaler, normalize, MinMaxScaler, RobustScaler, MaxAbsScaler
 from sklearn.svm import SVR 
+from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsRegressor
 from scipy.stats import pearsonr
 from typing import Any, Tuple
@@ -15,6 +16,7 @@ import os
 import re
 import xgboost
 from sklearn.model_selection import GridSearchCV
+import matplotlib.pyplot as plt
 
 
 def parse_args():
@@ -83,26 +85,24 @@ def cv(x: np.ndarray,
     :return: Tuple[float, float, float, float], mean squared error, mean absolute error, pearson correlation, r2 score
     """
     # grid search
-    parameters = {'alpha' : [10**-7,10**-6,10**-5.0,10**-4,10**-3,10**-2,10**-1.5,10**-1.0,
-    10,10**1.5,10**2.0]}
+    alphas= [10**-7,10**-6,10**-5.0,10**-4,10**-3,10**-2,10**-1.5,10**-1.0,10,10**1.5,10**2.0]
+    parameters = {'alpha' : alphas}
     model= GridSearchCV(Ridge(), parameters, scoring='neg_mean_squared_error',cv=5)
-    kf = KFold(n_splits=5, shuffle=True, random_state=6)
-    scores = []
-    mae = []
-    pearson = []
-    r2 = []
-    for train_index, test_index in kf.split(x):
-        x_train, x_test = x[train_index], x[test_index]
-        y_train, y_test = y[train_index], y[test_index]
-        x_train, x_test = normalize_data(x_train, x_test, normalization)
-        model.fit(x_train, y_train)
-        y_pred = model.predict(x_test)
-        scores.append(mean_squared_error(y_test, y_pred))
-        mae.append(mean_absolute_error(y_test, y_pred))
-        pearson.append(pearsonr(y_test.squeeze(), y_pred.squeeze())[0])
-        r2.append(r2_score(y_test, y_pred))
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42)
+    x_train, x_test = normalize_data(x_train, x_test, normalization)
+    model.fit(x_train, y_train)
+    results = model.cv_results_['mean_test_score']
+    plt.plot(np.log(alphas),-results)
+    plt.xlabel("Log10(Alpha)")
+    plt.ylabel('test MSE')
+    plt.show()
+    y_pred = model.predict(x_test)
+    score=mean_squared_error(y_test, y_pred)
+    mae=mean_absolute_error(y_test, y_pred)
+    pearson=pearsonr(y_test.squeeze(), y_pred.squeeze())[0]
+    r2=r2_score(y_test, y_pred)
     print(model.best_params_)
-    return np.mean(scores).round(4).item(), np.mean(mae).round(4).item(), np.mean(pearson).round(4).item(), np.mean(r2).round(4).item()
+    return score,mae, pearson, r2
 
 
 
