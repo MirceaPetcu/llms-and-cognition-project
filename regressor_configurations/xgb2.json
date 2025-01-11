@@ -1,0 +1,7 @@
+{
+    "n_estimators": 500,
+    "max_depth":7, 
+    "eta":0.1, 
+    "subsample":0.7, 
+    "colsample_bytree":0.8
+}

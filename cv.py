@@ -123,7 +123,7 @@ def cv(x: np.ndarray,
 if __name__ == '__main__':
     args = parse_args()
     data = get_processed_dataset(args.data)
-
+    avgpearson = 0
     num_layers = len([k for k  in data[0].keys() if bool(re.search(r'\d', k) and 'token' not in k) ])//2
     for layer in range(num_layers):
         if args.task == 'sentence':
@@ -138,6 +138,7 @@ if __name__ == '__main__':
             # last token embeddings prediction
             x = np.array([entry[f'embedding_{layer}_last'] for entry in data])
             mse, mae, pearson, r2 = cv(x, y, args.model, get_model_params(args.params), args.normalization)
+            avgpearson+=pearson
             print(f'Layer {layer} embeddings last: MSE: {mse}, MAE: {mae}, Pearson: {pearson}, R2: {r2}')
             save_preduction_results(results={'mse': mse, 'mae': mae, 'pearson': pearson, 'r2': r2},
                                     path=f'cv_results_last_token_{args.task}_{args.model}_{args.normalization}_{layer}_\
@@ -149,10 +150,13 @@ if __name__ == '__main__':
             y = np.array([entry['targets'] for entry in data])
             y = y.astype(np.float32)
             mse, mae, pearson, r2 = cv(x, y, args.model, get_model_params(args.params), args.normalization)
+            avgpearson+=pearson
             print(f'Layer {layer} embeddings mean: MSE: {mse}, MAE: {mae}, Pearson: {pearson}, R2: {r2}')
             save_preduction_results(results={'mse': mse, 'mae': mae, 'pearson': pearson, 'r2': r2},
                                     path=f'cv_results_tokens_embeddings_{args.model}_{args.normalization}_layer_{layer}_\
                                         {".".join("_".join(args.data.split("/")).split(".")[:-1])}.yaml')
-
+    print(avgpearson/num_layers)
+    save_preduction_results(results={'avgpearson:' : avgpearson/num_layers},path=f'cv_results_tokens_embeddings_{args.model}_{args.normalization}\
+                                        {".".join("_".join(args.data.split("/")).split(".")[:-1])}.yaml')
             
     
