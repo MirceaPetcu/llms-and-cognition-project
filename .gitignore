@@ -171,3 +171,4 @@ cython_debug/
 .pypirc
 multils_test_all_lcp_labels_gptq_forward_word/Qwen2.5-0.5B-Instruct-GPTQ-Int4_0_569.pkl
 multils_test_french_lcp_labels_float16_forward_sentence/Qwen2.5-0.5B-Instruct_0_568.pkl
+multils_test_french_lcp_labels_float16_forward_word/Qwen2.5-0.5B-Instruct_0_568.pkl

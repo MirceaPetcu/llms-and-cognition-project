@@ -72,7 +72,6 @@ def get_model_params(params_file_path: str) -> dict:
 def cv(x: np.ndarray,
        y: np.ndarray, 
        model_name: str, 
-       model_params: dict,
        normalization: str = 'l1') -> Tuple[float, float, float, float]:
     """
     Perform cross-validation for a given model and data.
@@ -86,7 +85,7 @@ def cv(x: np.ndarray,
     # grid search
     parameters = {'alpha' : [10**-7,10**-6,10**-5.0,10**-4,10**-3,10**-2,10**-1.5,10**-1.0,
     10,10**1.5,10**2.0]}
-    model= GridSearchCV(model, parameters, scoring='neg_mean_squared_error',cv=5)
+    model= GridSearchCV(Ridge(), parameters, scoring='neg_mean_squared_error',cv=5)
     kf = KFold(n_splits=5, shuffle=True, random_state=6)
     scores = []
     mae = []
@@ -138,7 +137,7 @@ if __name__ == '__main__':
             x = np.array([entry[f'tokens_{layer}'][entry['nth_tokens'][0]: entry['nth_tokens'][1]].mean(axis=0) for entry in data])
             y = np.array([entry['targets'] for entry in data])
             y = y.astype(np.float32)
-            mse, mae, pearson, r2 = cv(x, y, args.model, get_model_params(args.params), args.normalization)
+            mse, mae, pearson, r2 = cv(x, y, args.model, args.normalization)
             avgpearson+=pearson
             print(f'Layer {layer} embeddings mean: MSE: {mse}, MAE: {mae}, Pearson: {pearson}, R2: {r2}')
             save_preduction_results(results={'mse': mse, 'mae': mae, 'pearson': pearson, 'r2': r2},
