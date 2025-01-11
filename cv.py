@@ -4,6 +4,8 @@ from sklearn.model_selection import KFold
 from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.preprocessing import StandardScaler, normalize, MinMaxScaler, RobustScaler, MaxAbsScaler
+from sklearn.svm import SVR 
+from sklearn.neighbors import KNeighborsRegressor
 from scipy.stats import pearsonr
 from typing import Any, Tuple
 import json
@@ -11,6 +13,7 @@ import argparse
 from utils import setup_logger, get_processed_dataset, save_preduction_results
 import os
 import re
+import xgboost
 
 
 def parse_args():
@@ -55,12 +58,14 @@ def normalize_data(x_train: np.ndarray, x_test: np.ndarray, normalization: str =
 def get_model(model_name: str, model_params: dict) -> Any:
     if model_name == 'ridge':
         model = Ridge(**model_params)
+    elif model_name == 'xgb':
+        model = xgboost.XGBRegressor(**model_params)
     elif model_name == 'rf':
         model = RandomForestRegressor(**model_params)
     elif model_name == 'lr':
         model = LinearRegression(**model_params)
     elif model_name == 'svr':
-        model = SVR(**model_params)
+        model = SVR(kernel='poly')
     elif model_name == 'knn':
         model = KNeighborsRegressor(**model_params)
     elif model_name == 'mlp':
