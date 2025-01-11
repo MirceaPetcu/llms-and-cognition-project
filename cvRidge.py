@@ -101,7 +101,7 @@ def cv(x: np.ndarray,
         mae.append(mean_absolute_error(y_test, y_pred))
         pearson.append(pearsonr(y_test.squeeze(), y_pred.squeeze())[0])
         r2.append(r2_score(y_test, y_pred))
-    
+    print(model.best_params_)
     return np.mean(scores).round(4).item(), np.mean(mae).round(4).item(), np.mean(pearson).round(4).item(), np.mean(r2).round(4).item()
 
 
