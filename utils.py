@@ -37,7 +37,7 @@ def prepare_input(input, args: argparse.Namespace, logger: logging.Logger = None
         raise ValueError(f"Dataset type not supported")
 def get_tokenizer(language : str):
     if language == 'english':
-            tokenize = RegexpTokenizer(r"\w+(?:-\w+)*|'|[^\w\s]")
+            tokenize = 0
             #tokenize = spacy.load("en_core_web_sm")
     elif language == 'german':
             tokenize = spacy.load("de_core_news_sm")
