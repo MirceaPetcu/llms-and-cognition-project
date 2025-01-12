@@ -42,7 +42,8 @@ def get_tokenizer(language : str):
     elif language == 'german':
             tokenize = spacy.load("de_core_news_sm")
     elif language == 'spanish':
-            tokenize = spacy.load("es_core_news_sm")
+            tokenize = 0
+            #tokenize = spacy.load("es_core_news_sm")
     elif language == 'catalan':
             tokenize = spacy.load("ca_core_news_sm")
     elif language == 'french':
@@ -64,7 +65,7 @@ def prepare_sample(tokenize,text: str, targets: Any, entry: pd.Series, args: arg
     if args.task == 'word':
         tokenizer=RegexpTokenizer(r"\w+(?:-\w+)*|'|[^\w\s]")
         sample['word'] = entry[args.word_column]
-        if(args.lang == 'japanese' or args.lang == 'french' or args.lang == 'english' or args.lang == 'italian' or args.lang == 'portuguese'):
+        if(args.lang == 'german'):
             words=tokenizer.tokenize(entry[args.text_column].lower())
         else:
             words = tokenize(entry[args.text_column].lower())
