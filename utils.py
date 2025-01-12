@@ -46,25 +46,26 @@ def get_tokenizer(language : str):
     elif language == 'catalan':
             tokenize = spacy.load("ca_core_news_sm")
     elif language == 'french':
-            tokenize = RegexpTokenizer(r"\w+(?:-\w+)*|'|[^\w\s]")
+            tokenize = 0
             #tokenize = spacy.load("fr_core_news_lg")
     elif language == 'italian':
-            tokenize = RegexpTokenizer(r"\w+(?:-\w+)*|'|[^\w\s]")
+            tokenize = 0
             #tokenize = spacy.load("it_core_news_lg")
     elif language == 'portuguese':
-            tokenize = RegexpTokenizer(r"\w+(?:-\w+)*|'|[^\w\s]")
+            tokenize = 0
             #tokenize = spacy.load("pt_core_news_lg")
     elif language == 'japanese':
-            tokenize = RegexpTokenizer(r"\w+(?:-\w+)*|'|[^\w\s]")
+            tokenize = 0
             #tokenize = spacy.load("ja_core_news_sm")
     return tokenize
 
 def prepare_sample(tokenize,text: str, targets: Any, entry: pd.Series, args: argparse.Namespace) -> dict:
     sample = {'text': text, 'targets': targets, 'id': entry[args.id_column]}
     if args.task == 'word':
+        tokenizer=RegexpTokenizer(r"\w+(?:-\w+)*|'|[^\w\s]")
         sample['word'] = entry[args.word_column]
         if(args.lang == 'japanese' or args.lang == 'french' or args.lang == 'english' or args.lang == 'italian' or args.lang == 'portuguese'):
-            words=tokenize.tokenize(entry[args.text_column].lower())
+            words=tokenizer.tokenize(entry[args.text_column].lower())
         else:
             words = tokenize(entry[args.text_column].lower())
         words = [token.text for token in words]
