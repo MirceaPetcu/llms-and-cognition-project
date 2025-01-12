@@ -36,14 +36,25 @@ def prepare_input(input, args: argparse.Namespace, logger: logging.Logger = None
         logger.error(f"Dataset type not supported")
         raise ValueError(f"Dataset type not supported")
     
-def prepare_sample(tokenize,text: str, targets: Any, entry: pd.Series, args: argparse.Namespace) -> dict:
+def get_tokenizer(language : str):
+    if language == 'english':   
+            tokenize = 0
+    elif language == 'german':
+            tokenize = spacy.load("de_core_news_sm")    
+    else:
+        tokenize = RegexpTokenizer(r"\w+(?:-\w+)*|'|[^\w\s]")
+    return tokenize
+def prepare_sample(tokenizer,text: str, targets: Any, entry: pd.Series, args: argparse.Namespace) -> dict:
     sample = {'text': text, 'targets': targets, 'id': entry[args.id_column]}
     if args.task == 'word':
         sample['word'] = entry[args.word_column]
         if(args.lang == 'english'):
             words = word_tokenize(entry[args.text_column])
+        elif(args.lang == 'german'):
+            words = tokenizer(entry[args.text_column].lower())
+            words = [token.text for token in words]
         else:
-            words=tokenize.tokenize(entry[args.text_column].lower())
+            words=tokenizer.tokenize(entry[args.text_column].lower())
         sample['nth_word'] = words.index(entry[args.word_column].lower())
     sample['lang'] = entry[args.lang_column] if args.lang_column else None
 

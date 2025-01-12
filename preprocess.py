@@ -5,7 +5,7 @@ import os
 from huggingface_hub import login
 import argparse
 from model import Model
-from utils import prepare_input, prepare_sample, get_output_dir, save_processed_dataset, setup_logger, free_kaggle_disk_space
+from utils import prepare_input, prepare_sample, get_output_dir, save_processed_dataset, setup_logger, free_kaggle_disk_space, get_tokenizer
 from typing import List
 import gc
 from nltk.tokenize import RegexpTokenizer
@@ -53,7 +53,7 @@ def main(args: argparse.Namespace):
     processed_dataset = []
     range_data =  (0, 1000)
     x = 0
-    tokenize = RegexpTokenizer(r"\w+(?:-\w+)*|'|[^\w\s]")
+    tokenizer =  get_tokenizer(args.lang)
     for i, row in tqdm(df.iterrows(), total=len(df)):
         if i >= range_data[1]:
             save_processed_dataset(output_dir_name, args.model, processed_dataset, range_data, logger)
@@ -62,7 +62,7 @@ def main(args: argparse.Namespace):
             processed_dataset = []
             gc.collect()
         text, targets = prepare_input(row, args=args, logger=logger)
-        sample = prepare_sample(tokenize, text, targets, row, args=args)
+        sample = prepare_sample(tokenizer, text, targets, row, args=args)
         outputs, nth_tokens = model.inference(text, word_position=sample.get('nth_word', None))
         sample['nth_tokens'] = nth_tokens if nth_tokens is not None else None
         if args.task == 'word' and nth_tokens is None:
