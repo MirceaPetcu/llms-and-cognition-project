@@ -86,13 +86,13 @@ def cv(x: np.ndarray,
     """
     # grid search
     #alphas= [10**-5.0,10**-4,10**-3,10**-2.7,10**-2.5,10**-2.3,10**-2,10**-1.5,10**-1.0,10,10**2.0]
-    alphas= [10**-3.2,10**-3,10**-2.7,10**-2.5,10**-2.3,10**-2,10**-1.8,10,10**2.0]
+    alphas= [10**-3.2,10**-3,10**-2.8,10**-2.6,10**-2.4,10**-2.2,10**-2,10**-1.8,10,10**2.0]
     parameters = {'alpha' : alphas}
     model= GridSearchCV(Ridge(), parameters, scoring='neg_mean_squared_error',cv=5)
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42)
     x_train, x_test = normalize_data(x_train, x_test, normalization)
     model.fit(x_train, y_train)
-    results = model.cv_results_['mean_test_score']
+    #results = model.cv_results_['mean_test_score']
     '''
     plt.plot(np.log10(alphas),-results)
     plt.xlabel("Log10(Alpha)")
@@ -104,7 +104,7 @@ def cv(x: np.ndarray,
     mae=mean_absolute_error(y_test, y_pred)
     pearson=pearsonr(y_test.squeeze(), y_pred.squeeze())[0]
     r2=r2_score(y_test, y_pred)
-    print(model.best_params_)
+    #print(model.best_params_)
     return score,mae, pearson, r2
 
 if __name__ == '__main__':
@@ -145,10 +145,14 @@ if __name__ == '__main__':
             save_preduction_results(results={'mse': mse, 'mae': mae, 'pearson': pearson, 'r2': r2},
                                     path=f'cv_results_tokens_embeddings_{args.model}_{args.normalization}_layer_{layer}_\
                                         {".".join("_".join(args.data.split("/")).split(".")[:-1])}.yaml')
-    print(avgpearson/num_layers)
-    print(avgpearsonMean/num_layers)
-    print(avgpearsonLast/num_layers)
-    save_preduction_results(results={'avgpearsonWord:' : avgpearson/num_layers,'avgpearsonMean:' : avgpearsonMean/num_layers,'avgpearsonLast:' : avgpearsonLast/num_layers},path=f'cv_results_tokens_embeddings_{args.model}_{args.normalization}\
+    if args.task == 'word': 
+        print(avgpearson/num_layers)
+        save_preduction_results(results={'avgpearsonWord:' : avgpearson/num_layers},path=f'cv_results_tokens_embeddings_{args.model}_{args.normalization}\
+                                        {".".join("_".join(args.data.split("/")).split(".")[:-1])}.yaml')
+    else:
+        print(avgpearsonMean/num_layers)
+        print(avgpearsonLast/num_layers)
+        save_preduction_results(results={'avgpearsonMean:' : avgpearsonMean/num_layers,'avgpearsonLast:' : avgpearsonLast/num_layers},path=f'cv_results_tokens_embeddings_{args.model}_{args.normalization}\
                                         {".".join("_".join(args.data.split("/")).split(".")[:-1])}.yaml')
             
     
