@@ -5,9 +5,10 @@ import os
 from huggingface_hub import login
 import argparse
 from model import Model
-from utils import prepare_input, prepare_sample, get_output_dir, save_processed_dataset, setup_logger, free_kaggle_disk_space, get_tokenizer
+from utils import prepare_input, prepare_sample, get_output_dir, save_processed_dataset, setup_logger, free_kaggle_disk_space
 from typing import List
 import gc
+from nltk.tokenize import RegexpTokenizer
 
 
 def parse_args():
@@ -52,7 +53,7 @@ def main(args: argparse.Namespace):
     processed_dataset = []
     range_data =  (0, 1000)
     x = 0
-    tokenize = get_tokenizer(args.lang)
+    tokenize = RegexpTokenizer(r"\w+(?:-\w+)*|'|[^\w\s]")
     for i, row in tqdm(df.iterrows(), total=len(df)):
         if i >= range_data[1]:
             save_processed_dataset(output_dir_name, args.model, processed_dataset, range_data, logger)
