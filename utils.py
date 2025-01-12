@@ -37,7 +37,8 @@ def prepare_input(input, args: argparse.Namespace, logger: logging.Logger = None
         raise ValueError(f"Dataset type not supported")
 def get_tokenizer(language : str):
     if language == 'english':
-            tokenize = spacy.load("en_core_web_sm")
+            tokenize = RegexpTokenizer(r"\w+(?:-\w+)*|'|[^\w\s]")
+            #tokenize = spacy.load("en_core_web_sm")
     elif language == 'german':
             tokenize = spacy.load("de_core_news_sm")
     elif language == 'spanish':
@@ -45,20 +46,27 @@ def get_tokenizer(language : str):
     elif language == 'catalan':
             tokenize = spacy.load("ca_core_news_sm")
     elif language == 'french':
-            tokenize = spacy.load("fr_core_news_lg")
+            tokenize = RegexpTokenizer(r"\w+(?:-\w+)*|'|[^\w\s]")
+            #tokenize = spacy.load("fr_core_news_lg")
     elif language == 'italian':
-            tokenize = spacy.load("it_core_news_lg")
+            tokenize = RegexpTokenizer(r"\w+(?:-\w+)*|'|[^\w\s]")
+            #tokenize = spacy.load("it_core_news_lg")
     elif language == 'portuguese':
-            tokenize = spacy.load("pt_core_news_lg")
+            tokenize = RegexpTokenizer(r"\w+(?:-\w+)*|'|[^\w\s]")
+            #tokenize = spacy.load("pt_core_news_lg")
     elif language == 'japanese':
-            tokenize = spacy.load("ja_core_news_sm")
+            tokenize = RegexpTokenizer(r"\w+(?:-\w+)*|'|[^\w\s]")
+            #tokenize = spacy.load("ja_core_news_sm")
     return tokenize
 
 def prepare_sample(tokenize,text: str, targets: Any, entry: pd.Series, args: argparse.Namespace) -> dict:
     sample = {'text': text, 'targets': targets, 'id': entry[args.id_column]}
     if args.task == 'word':
         sample['word'] = entry[args.word_column]
-        words = tokenize(entry[args.text_column].lower())
+        if(args.lang == 'japanese' or args.lang == 'french' or args.lang == 'english' or args.lang == 'italian' or args.lang == 'portuguese'):
+            words=tokenize.tokenize(entry[args.text_column].lower())
+        else:
+            words = tokenize(entry[args.text_column].lower())
         words = [token.text for token in words]
         sample['nth_word'] = words.index(entry[args.word_column].lower())
     sample['lang'] = entry[args.lang_column] if args.lang_column else None
