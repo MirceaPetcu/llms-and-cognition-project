@@ -45,13 +45,13 @@ def get_tokenizer(language : str):
     elif language == 'catalan':
             tokenize = spacy.load("ca_core_news_sm")
     elif language == 'french':
-            tokenize = spacy.load("fr_core_news_sm")
+            tokenize = spacy.load("fr_core_news_md")
     elif language == 'italian':
-            tokenize = spacy.load("it_core_news_sm")
+            tokenize = spacy.load("it_core_news_md")
     elif language == 'portuguese':
-            tokenize = spacy.load("pt_core_news_sm")
+            tokenize = spacy.load("pt_core_news_md")
     elif language == 'japanese':
-            tokenize = spacy.load("jp_core_news_sm")
+            tokenize = spacy.load("jp_core_news_md")
     return tokenize
 
 def prepare_sample(tokenize,text: str, targets: Any, entry: pd.Series, args: argparse.Namespace) -> dict:
