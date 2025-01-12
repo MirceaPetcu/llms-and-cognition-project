@@ -68,7 +68,7 @@ def prepare_sample(tokenize,text: str, targets: Any, entry: pd.Series, args: arg
             words=tokenizer.tokenize(entry[args.text_column].lower())
         else:
             words = tokenize(entry[args.text_column].lower())
-        words = [token.text for token in words]
+            words = [token.text for token in words]
         sample['nth_word'] = words.index(entry[args.word_column].lower())
     sample['lang'] = entry[args.lang_column] if args.lang_column else None
 
