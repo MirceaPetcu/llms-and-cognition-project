@@ -6,6 +6,9 @@ from typing import List, Any, Tuple, Union
 from datetime import datetime
 import pandas as pd
 from nltk.tokenize import word_tokenize
+from nltk.tokenize.toktok import ToktokTokenizer
+from nltk.tokenize import RegexpTokenizer
+import spacy
 import yaml
 import re
 
@@ -36,14 +39,42 @@ def prepare_input(input, args: argparse.Namespace, logger: logging.Logger = None
 
 def prepare_sample(text: str, targets: Any, entry: pd.Series, args: argparse.Namespace) -> dict:
     sample = {'text': text, 'targets': targets, 'id': entry[args.id_column]}
-    regex_patterns = {'english': r"\w+['’]?\w*|[^\w\s]", 'french': r"\w+|[^\w\s]", 'german': r"\w+['’]?\w*|[^\w\s]",
-                      'spanish':  r"\w+['’]?\w*|[^\w\s]", 'italian': r"\w+['’]?\w*|[^\w\s]", 'dutch': r"\w+['’]?\w*|[^\w\s]",}
     if args.task == 'word':
         sample['word'] = entry[args.word_column]
-        if args.lang_column == 'english':
-            words = word_tokenize(entry[args.text_column])
-        else:
-            words = re.findall(r'\w+(?:-\w+)*|[^\w\s]', entry[args.text_column].lower())
+        if entry[args.lang_column] == 'english':
+            #words = word_tokenize(entry[args.text_column])
+            tokenize = spacy.load("en_core_web_sm")
+            words = tokenize(entry[args.text_column].lower())
+            words = [token.text for token in words]
+        elif entry[args.lang_column] == 'german':
+            #words = re.findall(r'\w+(?:-\w+)*|[^\w\s]', entry[args.text_column].lower())
+            tokenize = spacy.load("de_core_news_sm")
+            words = tokenize(entry[args.text_column].lower())
+            words = [token.text for token in words]
+        elif entry[args.lang_column] == 'spanish':
+            tokenize = spacy.load("es_core_news_sm")
+            words = tokenize(entry[args.text_column].lower())
+            words = [token.text for token in words]
+        elif entry[args.lang_column] == 'catalan':
+            tokenize = spacy.load("ca_core_news_sm")
+            words = tokenize(entry[args.text_column].lower())
+            words = [token.text for token in words]
+        elif entry[args.lang_column] == 'french':
+            tokenize = spacy.load("fr_core_news_sm")
+            words = tokenize(entry[args.text_column].lower())
+            words = [token.text for token in words]
+        elif entry[args.lang_column] == 'italian':
+            tokenize = spacy.load("it_core_news_sm")
+            words = tokenize(entry[args.text_column].lower())
+            words = [token.text for token in words]
+        elif entry[args.lang_column] == 'portuguese':
+            tokenize = spacy.load("pt_core_news_sm")
+            words = tokenize(entry[args.text_column].lower())
+            words = [token.text for token in words]
+        elif entry[args.lang_column] == 'japanese':
+            tokenize = spacy.load("jp_core_news_sm")
+            words = tokenize(entry[args.text_column].lower())
+            words = [token.text for token in words]
         sample['nth_word'] = words.index(entry[args.word_column].lower())
     sample['lang'] = entry[args.lang_column] if args.lang_column else None
 
