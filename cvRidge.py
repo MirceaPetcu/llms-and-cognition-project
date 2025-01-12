@@ -85,7 +85,8 @@ def cv(x: np.ndarray,
     :return: Tuple[float, float, float, float], mean squared error, mean absolute error, pearson correlation, r2 score
     """
     # grid search
-    alphas= [10**-7,10**-6,10**-5.0,10**-4,10**-3,10**-2,10**-1.5,10**-1.0,10,10**1.5,10**2.0]
+    #alphas= [10**-5.0,10**-4,10**-3,10**-2.7,10**-2.5,10**-2.3,10**-2,10**-1.5,10**-1.0,10,10**2.0]
+    alphas= [10**-3.2,10**-3,10**-2.7,10**-2.5,10**-2.3,10**-2,10**-1.8,10,10**2.0]
     parameters = {'alpha' : alphas}
     model= GridSearchCV(Ridge(), parameters, scoring='neg_mean_squared_error',cv=5)
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42)
