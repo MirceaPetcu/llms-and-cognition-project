@@ -11,6 +11,10 @@ The project is structured into several Python scripts:
 -   `model.py`: This script defines the `Model` class, which handles loading LLMs, performing quantization and inference, and processing output embeddings.
 -   `utils.py`: This script contains utility functions for logging, data preparation, saving, and loading processed data.
 
+## Requirements
+
+-   Python 3.8+
+-   Install the required packages using `pip install -r requirements.txt`
 
 ## Setup
 
