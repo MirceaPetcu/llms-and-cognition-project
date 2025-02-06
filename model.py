@@ -40,7 +40,7 @@ class Model:
                 self.torch_dtype = torch.bfloat16
         elif self.weights_dtype.lower() in ('awq', 'gptq'):
             self.quantization_config = None
-            self.torch_dtype = torch.float16
+            self.torch_dtype = 'auto'
         elif self.weights_dtype.lower() == 'gguf':
             raise ValueError("GGUF not supported")
         elif self.weights_dtype.lower() == '1bit':
@@ -52,7 +52,7 @@ class Model:
             raise ValueError(f"Quantization type {self.weights_dtype} not supported")
 
     def _load_model(self) -> None:
-        model_args = {'low_cpu_mem_usage': True, 'device_map': 'auto', 'output_hidden_states': True, 'torch_dtype': self.torch_dtype}
+        model_args = {'device_map': 'auto', 'output_hidden_states': True, 'torch_dtype': self.torch_dtype}
         if self.quantization_config is not None:
             model_args['quantization_config'] = self.quantization_config
         if self.weights_dtype.lower() == 'gguf':
@@ -70,6 +70,8 @@ class Model:
             self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
             self.logger.info(f"Model {self.model_id} loaded successfully")
             print(self.model)
+            # if self.weights_dtype in ('float16', 'bfloat16', 'float32'):
+            #     self.model.to_empty(device='cuda')
         except Exception as e:
             self.logger.error(f"Error loading model {self.model_id}: {e}")
             raise Exception(f"Error loading model {self.model_id}: {e}")

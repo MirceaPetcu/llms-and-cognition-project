@@ -7,3 +7,4 @@ accelerate
 optimum
 auto-gptq
 autoawq
+nltk
