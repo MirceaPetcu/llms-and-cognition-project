@@ -8,6 +8,7 @@ import pandas as pd
 from nltk.tokenize import word_tokenize
 import yaml
 import re
+import json
 
 
 def setup_logger(file_name: str = 'script.log') -> logging.Logger:
@@ -51,7 +52,7 @@ def prepare_sample(text: str, targets: Any, entry: pd.Series, args: argparse.Nam
 
 
 def get_output_dir(args: argparse.Namespace, logger: logging.Logger) -> str:
-    output_dir_name = f"{args.data_keyword}_{args.dtype}_{args.inference_type}_{args.task}"
+    output_dir_name = f"{args.data_keyword}_{args.dtype}_{args.task}"
     os.makedirs(output_dir_name, exist_ok=True)
     logger.info(f"Output directory created: {output_dir_name}")
     return output_dir_name
@@ -85,4 +86,4 @@ def get_processed_dataset(data_path: str):
 def save_preduction_results(results: dict, path: str) -> None:
     os.makedirs('results', exist_ok=True)
     with open(os.path.join('results', path), 'w') as f:
-        yaml.dump(results, f, default_flow_style=False)
+        json.dump(results, f, indent=4)

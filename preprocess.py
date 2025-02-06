@@ -8,27 +8,46 @@ from model import Model
 from utils import prepare_input, prepare_sample, get_output_dir, save_processed_dataset, setup_logger, free_kaggle_disk_space
 from typing import List
 import gc
+import argparse
+import json
+import os
 
+def load_config(config_path):
+    """Load configuration from a specified JSON file."""
+    if os.path.exists(config_path):
+        with open(config_path, "r") as file:
+            return json.load(file)
+    raise FileNotFoundError(f"Config file {config_path} not found!")
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Process some integers.')
-    parser.add_argument('--hf_token', type=str, default=None, help='Huggingface token')
-    parser.add_argument('--model', type=str, default='Qwen/Qwen2.5-0.5B',
-                        help='Models ID')
-    parser.add_argument('--data', type=str, default='hf://datasets/MLSP2024/MLSP2024/English/multils_test_english_lcp_labels.tsv',
-                 help='data file/ data link')
-    parser.add_argument('--data_keyword', type=str, default='multils_test_all_lcp_labels',
-                        help='data keyword')
-    parser.add_argument('--text_column', type=str, default='context', help='text column')
-    parser.add_argument('--target_column', type=str, default=['complexity'], help='target column')
-    parser.add_argument('--lang_column', type=str, default='language', help='language column')
-    parser.add_argument('--id_column', type=str, default='id', help='id column')
-    parser.add_argument('--word_column', type=str, default='target', help='word column')
-    parser.add_argument('--dtype', type=str, default='bnb', help='quantization type')
-    parser.add_argument('--inference_type', type=str, default='forward', help='inference type')
-    parser.add_argument('--task', type=str, default='word', choices=['sentence', 'word'], help='sentence or word')
-    parser.add_argument('--additional_prompt', type=str, default=None, help='additional prompt')
-    parser.add_argument('--gguf_filename', type=str, default=None, help='gguf filename to load from')
+    """Parse command-line arguments and load configuration from a JSON file if provided."""
+    parser = argparse.ArgumentParser(description="Load config from JSON or CLI arguments.")
+    
+    # Add an argument to specify the configuration file
+    parser.add_argument('--config', type=str, default="config_fp32.json", help="Path to JSON config file")
+    parser.add_argument('--hf_token', type=str, default='', help='Huggingface token')
+    parser.add_argument('--model', type=str, default='', help='Model ID')
+    
+    # Parse known arguments to get the config path first
+    args, unknown = parser.parse_known_args()
+    
+    # Load configuration from the specified JSON file
+    config = load_config(args.config)
+
+    # Add the rest of the arguments using config defaults
+    parser.add_argument('--data', type=str, default=config.get("data"), help='Data file/data link')
+    parser.add_argument('--data_keyword', type=str, default=config.get("data_keyword"), help='Data keyword')
+    parser.add_argument('--text_column', type=str, default=config.get("text_column"), help='Text column')
+    parser.add_argument('--target_column', type=str, default=config.get("target_column"), help='Target column')
+    parser.add_argument('--lang_column', type=str, default=config.get("lang_column"), help='Language column')
+    parser.add_argument('--id_column', type=str, default=config.get("id_column"), help='ID column')
+    parser.add_argument('--word_column', type=str, default=config.get("word_column"), help='Word column')
+    parser.add_argument('--dtype', type=str, default=config.get("dtype"), help='Quantization type')
+    parser.add_argument('--inference_type', type=str, default=config.get("inference_type", "forward"), help='Inference type')
+    parser.add_argument('--task', type=str, default=config.get("task"), choices=['sentence', 'word'], help='Sentence or word task')
+    parser.add_argument('--additional_prompt', type=str, default=config.get("additional_prompt", ""), help='Additional prompt')
+    parser.add_argument('--gguf_filename', type=str, default=config.get("gguf_filename", ""), help='GGUF filename to load from')
+
     return parser.parse_args()
 
 
@@ -67,12 +86,12 @@ def main(args: argparse.Namespace):
             x += 1
         sample = model.process_output_embeddings(outputs, sample)
         processed_dataset.append(sample)
-    model.free_memory()
+    # model.free_memory()
     print(x)
-    free_kaggle_disk_space(logger)
+    # free_kaggle_disk_space(logger)
     save_processed_dataset(output_dir_name, args.model, processed_dataset, (range_data[0], i), logger)
     logger.info(f"Processing completed for model {args.model}")
-
+    
 
 if __name__ == '__main__':
     args = parse_args()

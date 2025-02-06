@@ -1,0 +1,14 @@
+{
+    "data": "bold_response_LH.csv",
+    "data_keyword": "bold_response_LH",
+    "text_column": "sentence",
+    "target_column": ["lang_LH_netw"],
+    "lang_column": "",
+    "id_column": "item_id",
+    "word_column": "target",
+    "dtype": "bnb",
+    "inference_type": "forward",
+    "task": "sentence",
+    "additional_prompt": null,
+    "gguf_filename": null
+}
