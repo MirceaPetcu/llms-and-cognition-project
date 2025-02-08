@@ -15,16 +15,23 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression
 from sklearn.svm import SVR
 from sklearn.neighbors import KNeighborsRegressor
+from  lightgbm import LGBMRegressor
+import warnings
+from transformers import set_seed
+from sklearn.neural_network import MLPRegressor
 
+
+warnings.filterwarnings("ignore")
 
 def parse_args():
     parser = argparse.ArgumentParser('Cross-validation')
     parser.add_argument('--data', type=str, required=True, help='Path to the data file')
     parser.add_argument('--task', type=str, default='sentence', help='Task type complexity prediction')
+    parser.add_argument('--use_mean', type=bool, default=False, help='Use mean embeddings')
     parser.add_argument('--params', type=str, default= 'ridge_regression.json',
         help='Path to the model parameters file (.json)')
-    parser.add_argument('--normalization', type=str, default='l1', help='Normalization type')
-    parser.add_argument('--model', type=str,default='lr', help='Model name')
+    parser.add_argument('--normalization', type=str, default='', help='Normalization type')
+    parser.add_argument('--model', type=str,default='lgbm', help='Model name')
     return parser.parse_args()
 
 
@@ -69,6 +76,8 @@ def get_model(model_name: str, model_params: dict) -> Any:
         model = KNeighborsRegressor(**model_params)
     elif model_name == 'mlp':
         model = MLPRegressor(**model_params)
+    elif model_name == 'lgbm':
+        model = LGBMRegressor(verbose=-1, n_jobs=-1, **model_params)
     else:
         raise ValueError('Model not supported')
     return model
@@ -105,23 +114,29 @@ def cv(x: np.ndarray,
         x_train, x_test = x[train_index], x[test_index]
         y_train, y_test = y[train_index], y[test_index]
         x_train, x_test = normalize_data(x_train, x_test, normalization)
+        y_train = y_train.squeeze()
+        y_test = y_test.squeeze()
         model = get_model(model_name, model_params)
         model.fit(x_train, y_train)
         y_pred = model.predict(x_test)
         y_pred = y_pred.squeeze()
-        y_test = y_test.squeeze()
+
         scores.append(mean_squared_error(y_test, y_pred))
         mae.append(mean_absolute_error(y_test, y_pred))
         pearson.append(pearsonr(y_test, y_pred)[0])
         r2.append(r2_score(y_test, y_pred))
     
-    return np.mean(scores).round(4).item(), np.mean(mae).round(4).item(), np.mean(pearson).round(4).item(), np.mean(r2).round(4).item()
+    return (np.mean(scores).round(4).item(),
+            np.mean(mae).round(4).item(),
+            np.mean(pearson).round(4).item(),
+            np.mean(r2).round(4).item())
 
 
 
 
 
 if __name__ == '__main__':
+    set_seed(6)
     args = parse_args()
     data = get_processed_dataset(args.data)
 
@@ -131,16 +146,17 @@ if __name__ == '__main__':
     results_nth_token_word = {}
     for layer in range(num_layers):
         if args.task == 'sentence':
-            # mean embeddings prediction
-            x = np.array([entry[f'embeddgins_{layer}_mean'] for entry in data])
             y = np.array([entry['targets'] for entry in data])
-            x = x.astype(np.float32)
             y = y.astype(np.float32)
-            mse, mae, pearson, r2 = cv(x, y, args.model, get_model_params(args.params), args.normalization)
-            print(f'Layer {layer} embeddings mean: MSE: {mse}, MAE: {mae}, Pearson: {pearson}, R2: {r2}')
-            results_mean_sentece[layer] = {'mse': mse, 'mae': mae, 'pearson': pearson, 'r2': r2}
+            if args.use_mean:
+                x = np.array([entry[f'embeddgins_{layer}_mean'] for entry in data])
+                x = x.astype(np.float32)
+                mse, mae, pearson, r2 = cv(x, y, args.model, get_model_params(args.params), args.normalization)
+                print(f'Layer {layer} embeddings mean: MSE: {mse}, MAE: {mae}, Pearson: {pearson}, R2: {r2}')
+                results_mean_sentece[layer] = {'mse': mse, 'mae': mae, 'pearson': pearson, 'r2': r2}
             # last token embeddings prediction
             x = np.array([entry[f'embedding_{layer}_last'] for entry in data])
+            x = x.astype(np.float32)
             mse, mae, pearson, r2 = cv(x, y, args.model, get_model_params(args.params), args.normalization)
             print(f'Layer {layer} embeddings last: MSE: {mse}, MAE: {mae}, Pearson: {pearson}, R2: {r2}')
             results_last_sentence[layer] = {'mse': mse, 'mae': mae, 'pearson': pearson, 'r2': r2}
@@ -156,11 +172,15 @@ if __name__ == '__main__':
             results_nth_token_word[layer] = {'mse': mse, 'mae': mae, 'pearson': pearson, 'r2': r2}
 
     if args.task == "sentence":
-        save_preduction_results(results=results_mean_sentece,
-                            path=f'mean_embeddings_{args.task}_{args.model}_{args.normalization}_{".".join("_".join(args.data.split("/")).split(".")[:-1])}.json')
-        save_preduction_results(results=results_last_sentence,
-                                path=f'last_embeddings_{args.task}_{args.model}_{args.normalization}_{".".join("_".join(args.data.split("/")).split(".")[:-1])}.json')
+        if args.use_mean:
+            save_preduction_results(
+                results=results_mean_sentece,
+                path=f'mean_embeddings_{args.task}_{args.model}_{args.normalization}_{".".join("_".join(args.data.split("/")).split(".")[:-1])}.json')
+        save_preduction_results(
+            results=results_last_sentence,
+            path=f'last_embeddings_{args.task}_{args.model}_{args.normalization}_{".".join("_".join(args.data.split("/")).split(".")[:-1])}.json')
     elif args.task == "word":
-        save_preduction_results(results=results_nth_token_word,
-                                path=f'tokens_embeddings_{args.task}_{args.model}_{args.normalization}_{".".join("_".join(args.data.split("/")).split(".")[:-1])}.json')    
+        save_preduction_results(
+            results=results_nth_token_word,
+            path=f'tokens_embeddings_{args.task}_{args.model}_{args.normalization}_{".".join("_".join(args.data.split("/")).split(".")[:-1])}.json')
     
