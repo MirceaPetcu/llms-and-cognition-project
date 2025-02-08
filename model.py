@@ -70,8 +70,7 @@ class Model:
             self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
             self.logger.info(f"Model {self.model_id} loaded successfully")
             print(self.model)
-            # if self.weights_dtype in ('float16', 'bfloat16', 'float32'):
-            #     self.model.to_empty(device='cuda')
+            print(self.model.device)
         except Exception as e:
             self.logger.error(f"Error loading model {self.model_id}: {e}")
             raise Exception(f"Error loading model {self.model_id}: {e}")

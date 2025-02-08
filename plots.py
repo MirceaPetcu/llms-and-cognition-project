@@ -2,11 +2,11 @@ import json
 import matplotlib.pyplot as plt
 
 # Load the first JSON file
-with open('results/last_embeddings_sentence_lr_l1_bold_response_LH_float16_sentence_Qwen2.5-7B-Instruct_0_999.json', 'r') as f:
+with open('results/last_embeddings_sentence_ridge_l1_bold_response_LH_float16_sentence_Qwen2.5-7B-Instruct_0_999.json', 'r') as f:
     dict1 = json.load(f)
 
 # Load the second JSON file
-with open('results/last_embeddings_sentence_lr_l1_bold_response_LH_gptq_sentence_Qwen2.5-7B-Instruct-GPTQ-Int4_0_999.json', 'r') as f:
+with open('results/last_embeddings_sentence_ridge_l1_bold_response_LH_gptq_sentence_Qwen2.5-7B-Instruct-GPTQ-Int4_0_999.json', 'r') as f:
     dict2 = json.load(f)
 
 # Extract x-axis values (layer numbers) and y-axis values (pearson correlations) for dict1
