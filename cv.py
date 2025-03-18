@@ -25,13 +25,14 @@ warnings.filterwarnings("ignore")
 
 def parse_args():
     parser = argparse.ArgumentParser('Cross-validation')
-    parser.add_argument('--data', type=str, required=True, help='Path to the data file')
-    parser.add_argument('--task', type=str, default='sentence', help='Task type complexity prediction')
-    parser.add_argument('--use_mean', type=bool, default=False, help='Use mean embeddings')
+    parser.add_argument('--data', type=str, required=True, help='Path to the processed dataset')
+    parser.add_argument('--last_embedding', type=bool, default=True, help='Whether to use last embedding or not')
+    parser.add_argument('--mean_embedding', type=bool, default=True, help='Whether to use mean embedding or not')
+    parser.add_argument('--word_embedding', type=bool, default=True, help='Whether to use word embedding or not')
     parser.add_argument('--params', type=str, default= 'ridge_regression.json',
         help='Path to the model parameters file (.json)')
     parser.add_argument('--normalization', type=str, default='', help='Normalization type')
-    parser.add_argument('--model', type=str,default='lgbm', help='Model name')
+    parser.add_argument('--model', type=str, default='ridge', help='Model name')
     return parser.parse_args()
 
 
@@ -145,42 +146,45 @@ if __name__ == '__main__':
     results_last_sentence = {}
     results_nth_token_word = {}
     for layer in range(num_layers):
-        if args.task == 'sentence':
+        if args.last_embedding:
             y = np.array([entry['targets'] for entry in data])
             y = y.astype(np.float32)
-            if args.use_mean:
-                x = np.array([entry[f'embeddgins_{layer}_mean'] for entry in data])
-                x = x.astype(np.float32)
-                mse, mae, pearson, r2 = cv(x, y, args.model, get_model_params(args.params), args.normalization)
-                print(f'Layer {layer} embeddings mean: MSE: {mse}, MAE: {mae}, Pearson: {pearson}, R2: {r2}')
-                results_mean_sentece[layer] = {'mse': mse, 'mae': mae, 'pearson': pearson, 'r2': r2}
             # last token embeddings prediction
             x = np.array([entry[f'embedding_{layer}_last'] for entry in data])
             x = x.astype(np.float32)
             mse, mae, pearson, r2 = cv(x, y, args.model, get_model_params(args.params), args.normalization)
             print(f'Layer {layer} embeddings last: MSE: {mse}, MAE: {mae}, Pearson: {pearson}, R2: {r2}')
             results_last_sentence[layer] = {'mse': mse, 'mae': mae, 'pearson': pearson, 'r2': r2}
+
+        if args.mean_embedding:
+            y = np.array([entry['targets'] for entry in data])
+            y = y.astype(np.float32)
+            x = np.array([entry[f'embeddgins_{layer}_mean'] for entry in data])
+            x = x.astype(np.float32)
+            mse, mae, pearson, r2 = cv(x, y, args.model, get_model_params(args.params), args.normalization)
+            print(f'Layer {layer} embeddings mean: MSE: {mse}, MAE: {mae}, Pearson: {pearson}, R2: {r2}')
+            results_mean_sentece[layer] = {'mse': mse, 'mae': mae, 'pearson': pearson, 'r2': r2}
       
-        elif args.task == 'word':
+        if args.word_embedding:
             # nth tokens embeddings prediction
             x = np.array([entry[f'tokens_{layer}'][entry['nth_tokens'][0]: entry['nth_tokens'][1]].mean(axis=0) for entry in data])
             y = np.array([entry['targets'] for entry in data])
             x = x.astype(np.float32)
             y = y.astype(np.float32)
             mse, mae, pearson, r2 = cv(x, y, args.model, get_model_params(args.params), args.normalization)
-            print(f'Layer {layer} embeddings mean: MSE: {mse}, MAE: {mae}, Pearson: {pearson}, R2: {r2}')
+            print(f'Layer {layer} embeddings word embedding: MSE: {mse}, MAE: {mae}, Pearson: {pearson}, R2: {r2}')
             results_nth_token_word[layer] = {'mse': mse, 'mae': mae, 'pearson': pearson, 'r2': r2}
 
-    if args.task == "sentence":
-        if args.use_mean:
-            save_preduction_results(
-                results=results_mean_sentece,
-                path=f'mean_embeddings_{args.task}_{args.model}_{args.normalization}_{".".join("_".join(args.data.split("/")).split(".")[:-1])}.json')
+    if args.mean_embedding:
+        save_preduction_results(
+            results=results_mean_sentece,
+            path=f'mean_embeddings_{args.model}_{args.normalization}_{".".join("_".join(args.data.split("/")).split(".")[:-1])}.json')
+    if args.last_embedding:
         save_preduction_results(
             results=results_last_sentence,
-            path=f'last_embeddings_{args.task}_{args.model}_{args.normalization}_{".".join("_".join(args.data.split("/")).split(".")[:-1])}.json')
-    elif args.task == "word":
+            path=f'last_embeddings_{args.model}_{args.normalization}_{".".join("_".join(args.data.split("/")).split(".")[:-1])}.json')
+    if args.word_embedding:
         save_preduction_results(
             results=results_nth_token_word,
-            path=f'tokens_embeddings_{args.task}_{args.model}_{args.normalization}_{".".join("_".join(args.data.split("/")).split(".")[:-1])}.json')
+            path=f'tokens_embeddings_{args.model}_{args.normalization}_{".".join("_".join(args.data.split("/")).split(".")[:-1])}.json')
     

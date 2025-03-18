@@ -1,10 +1,10 @@
 {
-    "data": "hf://datasets/MLSP2024/MLSP2024/English/multils_test_english_lcp_labels.tsv",
+    "dataset_path": "hf://datasets/MLSP2024/MLSP2024/English/multils_test_english_lcp_labels.tsv",
     "text_column": "context",
     "target_column": ["complexity"],
     "lang_column": "language",
     "id_column": "id",
     "word_column": "target",
-    "task": "word"
+    "data_keyword": "mlsp_english"
 
 }

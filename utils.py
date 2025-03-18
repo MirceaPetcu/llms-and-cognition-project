@@ -1,14 +1,10 @@
 import os
 import pickle
-import argparse
 import logging
-from typing import List, Any, Tuple, Union
 from datetime import datetime
 import pandas as pd
-from nltk.tokenize import word_tokenize
-import yaml
-import re
 import json
+from arguments import PreprocessingArguments
 
 
 def setup_logger(file_name: str = 'script.log') -> logging.Logger:
@@ -17,7 +13,8 @@ def setup_logger(file_name: str = 'script.log') -> logging.Logger:
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     file_name = file_name + f"_{timestamp}.log"
     os.makedirs('logs', exist_ok=True)
-    handler = logging.FileHandler(os.path.join('logs', file_name))
+    handler = logging.FileHandler(os.path.join('logs', file_name),
+                                  mode='w')
     handler.setLevel(logging.INFO)
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
     handler.setFormatter(formatter)
@@ -25,7 +22,9 @@ def setup_logger(file_name: str = 'script.log') -> logging.Logger:
     return logger
 
 
-def prepare_input(input, args: argparse.Namespace, logger: logging.Logger = None) -> Tuple[str, List[any]]:
+def prepare_input(input: pd.Series,
+                  args: PreprocessingArguments,
+                  logger: logging.Logger = None) -> tuple[str, list[any]]:
     if args.data.split('.')[-1] in ('csv', 'tsv'):
         text = args.additional_prompt + input[args.text_column] if args.additional_prompt else input[args.text_column]
         targets = input[args.target_column]
@@ -35,32 +34,25 @@ def prepare_input(input, args: argparse.Namespace, logger: logging.Logger = None
         raise ValueError(f"Dataset type not supported")
 
 
-def prepare_sample(text: str, targets: Any, entry: pd.Series, args: argparse.Namespace) -> dict:
+def prepare_sample(text: str, targets: any, entry: pd.Series, args: PreprocessingArguments) -> dict:
     sample = {'text': text, 'targets': targets, 'id': entry[args.id_column]}
-    regex_patterns = {'english': r"\w+['’]?\w*|[^\w\s]", 'french': r"\w+|[^\w\s]", 'german': r"\w+['’]?\w*|[^\w\s]",
-                      'spanish':  r"\w+['’]?\w*|[^\w\s]", 'italian': r"\w+['’]?\w*|[^\w\s]", 'dutch': r"\w+['’]?\w*|[^\w\s]",}
-    if args.task == 'word':
+    if args.word_embedding:
         sample['word'] = entry[args.word_column]
-        if args.lang_column == 'english':
-            words = word_tokenize(entry[args.text_column])
-        else:
-            words = re.findall(r'\w+(?:-\w+)*|[^\w\s]', entry[args.text_column].lower())
-        sample['nth_word'] = words.index(entry[args.word_column].lower())
     sample['lang'] = entry[args.lang_column] if args.lang_column else None
 
     return sample
 
 
-def get_output_dir(args: argparse.Namespace, logger: logging.Logger) -> str:
-    output_dir_name = f"{args.data_keyword}_{args.dtype}_{args.task}"
+def get_output_dir(args: PreprocessingArguments, logger: logging.Logger) -> str:
+    output_dir_name = f"{args.data_keyword}_{args.dtype}"
     os.makedirs(output_dir_name, exist_ok=True)
     logger.info(f"Output directory created: {output_dir_name}")
     return output_dir_name
 
 
-def save_processed_dataset(output_dir_name: str, model_id: str, data: List[dict], range_data: Tuple, 
+def save_processed_dataset(output_dir_name: str, model_id: str, data: list[dict],
                            logger: logging.Logger) -> None:
-    output_file_name = f"{model_id.split('/')[1]}_{range_data[0]}_{range_data[1]}.pkl"
+    output_file_name = f"{model_id.split('/')[1]}.pkl"
     try:
         with open(os.path.join(output_dir_name, output_file_name), 'wb') as f:
             pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
@@ -87,3 +79,11 @@ def save_preduction_results(results: dict, path: str) -> None:
     os.makedirs('results', exist_ok=True)
     with open(os.path.join('results', path), 'w') as f:
         json.dump(results, f, indent=4)
+
+
+def load_config(config_path):
+    """Load configuration from a specified JSON file."""
+    if os.path.exists(config_path):
+        with open(config_path, "r") as file:
+            return json.load(file)
+    raise FileNotFoundError(f"Config file {config_path} not found!")
