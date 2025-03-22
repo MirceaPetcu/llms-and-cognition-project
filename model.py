@@ -4,8 +4,14 @@ import gc
 from transformers import (AutoTokenizer,
                         BitsAndBytesConfig,
                         AutoModelForCausalLM)
+from transformers.tokenization_utils_base import BatchEncoding
 
+import string
+import re
 
+def remove_punctuation(text):
+    translator = str.maketrans('', '', string.punctuation)
+    return text.translate(translator)
 
 class Model:
     def __init__(self, weights_dtype: str, model_id: str, last_embedding: bool,
@@ -70,33 +76,66 @@ class Model:
             self.logger.error(f"Error loading model {self.model_id}: {e}")
             raise Exception(f"Error loading model {self.model_id}: {e}")
 
+    def _get_words_for_tokens_span(self, span: list[str], _inputs: BatchEncoding) -> tuple[list[str], tuple[int, int]]:
+        """Get the words for the token span"""
+        span_words = []
+        global_start = None
+        global_end = None
+        for word_id in span:
+            start, end = _inputs.word_to_tokens(word_id)
+            if global_start is None:
+                global_start = start
+            # Get the token IDs for the word
+            token_ids = _inputs['input_ids'][0, start:end]
+            # Convert the token IDs to tokens
+            tokens = self.tokenizer.convert_ids_to_tokens(token_ids)
+            # Join the tokens to form the word
+            word = self.tokenizer.convert_tokens_to_string(tokens)
+            span_words.append(word)
+
+        global_end = end
+        return span_words, (global_start, global_end)
+
+    def _get_tokens_positions(self, target_word: str, inputs: BatchEncoding) -> tuple[int, int] | None:
+        """
+        Get the start and end positions of the target word/s
+        Iterate over the tokens and get the start and end positions of the target word/s
+        """
+        nth_tokens = None
+        target_word_normalized = re.sub(r'[·•]', '', target_word)
+        target_word_normalized = re.sub(r'[\'"`]+', "'", target_word_normalized)
+        target_word_normalized = re.sub(r'[-/\\_]', ' ', target_word_normalized)
+
+        target_words = target_word_normalized.split()
+        num_target_words = len(target_words)
+        words_ids = inputs.word_ids()
+        target_words = ' '.join(target_words).strip()
+        words_ids = sorted(list(set(words_ids)))
+        for idx in range(0, len(words_ids)):
+            if words_ids[idx] is None:
+                continue
+            current_phrase_ids = words_ids[idx: idx + num_target_words]
+            current_phrase_words, (current_start, current_end) = \
+                self._get_words_for_tokens_span(current_phrase_ids, inputs)
+            if ' '.join([re.sub(r'[^\w\s]', '', curr_word) for curr_word in current_phrase_words]).strip()\
+                    == target_words:
+                nth_tokens = (current_start, current_end)
+
+        if nth_tokens is None:
+            self.logger.error(f"Word {target_word} not found in the text")
+            return None
+        return nth_tokens
+
     def inference(self, text: str, target_word: str = None) -> tuple[dict, tuple[int, int] | None]:
         """Run inference on the model for embedding extraction"""
         try:
-            # inputs = self.tokenizer(text, return_tensors='pt', padding=False, truncation=True, max_length=1024).to(
-            #     self.model.device)
-            # TODO: fix this
             inputs = self.tokenizer.batch_encode_plus([text],
                                                       return_tensors='pt',
                                                       padding=False,
                                                       truncation=True,
                                                       max_length=1024,
                         return_attention_mask=True).to(self.model.device)
-            nth_tokens = None
-            # Build your desired mapping
-            for word_id in inputs.word_ids():
-                if word_id is not None:
-                    start, end = inputs.word_to_tokens(word_id)
-                    # Get the token IDs for the word
-                    token_ids = inputs['input_ids'][0, start:end]
-                    # Convert the token IDs to tokens
-                    tokens = self.tokenizer.convert_ids_to_tokens(token_ids)
-                    # Join the tokens to form the word
-                    word = self.tokenizer.convert_tokens_to_string(tokens)
-                    if word.strip() == target_word:
-                        nth_tokens = (start, end)
-            if nth_tokens is None:
-                self.logger.error(f"Word {target_word} not found in the text")
+            nth_tokens = self._get_tokens_positions(target_word, inputs) if target_word is not None else None
             with torch.no_grad():
                 outputs = self.model(**inputs)
             return outputs, nth_tokens

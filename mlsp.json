@@ -1,5 +1,5 @@
 {
-    "dataset_path": "hf://datasets/MLSP2024/MLSP2024/English/multils_test_english_lcp_labels.tsv",
+    "dataset_path": "hf://datasets/MLSP2024/MLSP2024/Italian/multils_test_italian_lcp_labels.tsv",
     "text_column": "context",
     "target_column": ["complexity"],
     "lang_column": "language",

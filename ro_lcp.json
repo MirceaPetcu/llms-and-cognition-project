@@ -1,5 +1,5 @@
 {
-    "dataset_path": "/home/mircea/master/llms_cogn/project/a86b28931650569b8ad993fb50126dee-5ec8914ed596b993bdf7e9dc00f97f9c54c3e2bc/a86b28931650569b8ad993fb50126dee-5ec8914ed596b993bdf7e9dc00f97f9c54c3e2bc/ro_lcp.csv",
+    "dataset_path": "data/ro_lcp.csv",
     "text_column": "text",
     "target_column": ["complexity"],
     "lang_column": "language",

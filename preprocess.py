@@ -10,23 +10,22 @@ from utils import (prepare_input,
                    setup_logger,
                    free_kaggle_disk_space,
                    load_config)
-import gc
 import argparse
 import json
-import os
 from arguments import PreprocessingArguments
 
 
 def parse_args():
     """Parse command-line arguments and load configuration from a JSON file if provided."""
     parser = argparse.ArgumentParser(description="Load config from JSON or CLI arguments.")
-    parser.add_argument('--hf_token', type=str, default='', required=True,
+    parser.add_argument('--hf_token', type=str,
+                        default='', required=False,
                         help='Huggingface token')
     parser.add_argument('--model', type=str, default='Qwen/Qwen2.5-0.5B-Instruct', help='Model ID')
     parser.add_argument('--dtype', type=str, default='float16',
                         choices=['float32', 'float16', 'gptq', 'bnb', 'awq'],
                         help='Quantization type')
-    parser.add_argument('--dataset_config_file', type=str, default='ro_lcp.json',
+    parser.add_argument('--dataset_config_file', type=str, default='mlsp.json',
                         help='Path to dataset configuration JSON file')
     parser.add_argument('--last_embedding', type=bool, default=True, help='Whether to store last embedding or not')
     parser.add_argument('--mean_embedding', type=bool, default=True, help='Whether to store mean embedding or not')
@@ -41,10 +40,10 @@ def main(args: PreprocessingArguments):
     logger = setup_logger(f"{args.data_keyword}_{args.model.split('/')[1]}_{args.dtype}.log")
     if args.data.split('.')[-1] in ('tsv'):
         df = pd.read_csv(args.data, sep="\t")
-    else:
+    elif args.data.split('.')[-1] in ('csv'):
         df = pd.read_csv(args.data)
-    print(df.shape)
-    print(args.data)
+    else:
+        raise ValueError("Only tsv and csv files are supported")
     output_dir_name = get_output_dir(args, logger)
     logger.info("Starting processing")
     logger.info(f"Processing model {args.model}")
@@ -56,6 +55,8 @@ def main(args: PreprocessingArguments):
                   logger=logger)
     logger.info(f"Model {args.model} loaded successfully")
     processed_dataset = []
+    not_assigned_words = 0
+    total_samples = 0
     for i, row in tqdm(df.iterrows(), total=len(df)):
         text, targets = prepare_input(input=row,
                                       args=args,
@@ -68,12 +69,15 @@ def main(args: PreprocessingArguments):
                                               target_word=sample.get('word', None))
         sample['nth_tokens'] = nth_tokens if nth_tokens is not None else None
         if args.word_embedding and nth_tokens is None:
-            sample['nth_tokens'] = (max(0, sample.get('nth_word', None)-2), sample.get('nth_word', None))
+            sample['nth_tokens'] = (-2,-1)
+            not_assigned_words += 1
         sample = model.process_output_embeddings(outputs, sample)
         processed_dataset.append(sample)
+        total_samples += 1
     save_processed_dataset(output_dir_name, args.model, processed_dataset, logger)
     logger.info(f"Processing completed for model {args.model}")
-    
+    print(f"Number of not assigned words: {not_assigned_words}")
+    print(f"Total samples {total_samples}")
 
 if __name__ == '__main__':
     args = parse_args()
