@@ -4,8 +4,8 @@
 echo "Installing dependencies..."
 pip install --no-cache-dir --force-reinstall -r requirements.txt
 pip3 install --no-cache-dir --force-reinstall torch torchvision
-pip install --no-cache-dir --force-reinstall --no-build-isolation auto_gptq==0.7.1
-pip install --no-cache-dir --force-reinstall --no-build-isolation autoawq==0.2.8
+pip install --no-cache-dir --force-reinstall --no-build-isolation auto_gptq>=0.7.1
+pip install --no-cache-dir --force-reinstall --no-build-isolation autoawq>=0.2.8
 
 echo "Starting preprocessing step..."
 # Run preprocessing with all necessary arguments

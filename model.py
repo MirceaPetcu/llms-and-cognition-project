@@ -110,6 +110,7 @@ class Model:
         num_target_words = len(target_words)
         words_ids = inputs.word_ids()
         target_words = ' '.join(target_words).strip()
+        words_ids = [word_id for word_id in words_ids if word_id is not None]
         words_ids = sorted(list(set(words_ids)))
         for idx in range(0, len(words_ids)):
             if words_ids[idx] is None:

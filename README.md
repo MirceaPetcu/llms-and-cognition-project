@@ -1,188 +1,176 @@
-```markdown
-# LLM Embeddings for Complexity Prediction
+# Language Model Embeddings for Linguistic Complexity Prediction
 
-This repository contains code for extracting embeddings from Large Language Models (LLMs) and using them for predicting text complexity, specifically for both sentence and word-level complexity.
+## 📋 Overview
 
-## Overview
+This project extracts embeddings from Large Language Models (LLMs) and uses them to predict linguistic complexity at both word and sentence levels. The pipeline processes text data through various language models, extracts embeddings from different layers, and evaluates their predictive power for complexity assessment tasks.
 
-The project is structured into several Python scripts:
+The research investigates how well different layers of language models capture linguistic complexity information and which model architectures perform better at this task.
 
--   `preprocess.py`: This script is responsible for loading a dataset, processing it using a specified LLM, and saving the extracted embeddings. It supports various quantization methods.
--   `cv.py`: This script performs cross-validation on the extracted embeddings using different regression models and normalization techniques.
--   `model.py`: This script defines the `Model` class, which handles loading LLMs, performing quantization and inference, and processing output embeddings.
--   `utils.py`: This script contains utility functions for logging, data preparation, saving, and loading processed data.
--   `plots.py`: This script generates plots of cross-validation results.
+## ✨ Features
 
-## Requirements
+- Extract embeddings from any Hugging Face transformer model
+- Support for various quantization methods (float16, float32, GPTQ, AWQ, BNB)
+- Extract embeddings from different model layers and positions:
+  - Last token embedding
+  - Mean of all token embeddings
+  - Target word embeddings for word-level complexity
+- Multiple regression models for complexity prediction
+- Comprehensive cross-validation framework
+- Result visualization across model layers
+- Configurable datasets and preprocessing steps
 
--   Python 3.8+
--   Install the required packages using `pip install -r requirements.txt`
-
-## Setup
-
-1.  **Clone the repository:**
-    ```bash
-    git clone <repository_url>
-    cd <repository_name>
-    ```
-2.  **Install dependencies:**
-    ```bash
-    pip install -r requirements.txt
-    ```
-3.  **Hugging Face Token:**
-    -   You'll need a Hugging Face token for downloading models. Set it as an environment variable or pass it as an argument using `--hf_token`.
-
-## Usage
-
-### 1. Preprocessing (Extracting Embeddings)
-
-Run `preprocess.py` to extract embeddings from a specified LLM.  You will need to configure the script using command-line arguments or by using a pre-defined JSON configuration file.  Two example configuration files are provided: `bold_response_config.json` and `mlsp_english_config.json`.  You can specify which configuration file to use by setting the `--data` argument to either `bold_response_LH` or `mlsp_english`.
-
-**Using Command-Line Arguments:**
+## 🚀 Installation
 
 ```bash
-python preprocess.py \
-    --hf_token <your_huggingface_token> \
-    --model <model_id> \
-    --data <data_keyword> \
-    --dtype <quantization_type> \
-    --inference_type <inference_type> \
-    --additional_prompt <additional_prompt> \
-    --gguf_filename <gguf_filename>
+# Clone the repository
+git clone https://github.com/yourusername/llms_cogn.git
+cd llms_cogn/project
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Install additional packages for quantization support
+pip install --no-build-isolation auto_gptq>=0.7.1
+pip install --no-build-isolation autoawq>=0.2.8
 ```
 
-**Using a Configuration File:**
+## 🛠️ Key Components
+
+- **preprocess.py**: Processes datasets through language models to extract embeddings
+- **model.py**: Handles model loading, quantization, inference, and embedding extraction
+- **cv.py**: Performs cross-validation using different regression models
+- **utils.py**: Contains utility functions for data processing and I/O operations
+- **plots.py**: Generates visualization of cross-validation results
+- **arguments.py**: Defines structured argument classes for parameter handling
+- **run.sh**: Main execution script that orchestrates the complete pipeline
+
+## 📊 Dataset Configuration
+
+The project uses JSON configuration files to define dataset parameters:
+
+```json
+{
+    "dataset_path": "path_to_dataset.csv",
+    "text_column": "column_containing_text",
+    "target_column": ["column_containing_complexity_score"],
+    "lang_column": "language_column",
+    "id_column": "id_column",
+    "word_column": "target_word_column (if_applicable)",
+    "data_keyword": "dataset_identifier"
+}
+```
+
+Example configurations are provided for:
+- MLSP dataset (multilingual lexical complexity prediction)
+- Bold Response LH dataset (sentence-level complexity)
+- Romanian LCP dataset (Romanian lexical complexity prediction)
+
+## 🔄 Pipeline Architecture
+
+1. **Preprocessing Stage**:
+   - Load and quantize language models from Hugging Face Hub
+   - Process input text through the model
+   - Extract embeddings from different layers
+
+2. **Cross-Validation Stage**:
+   - Use embeddings to predict complexity scores
+   - Evaluate performance using multiple regression models
+   - Test different normalization techniques
+
+3. **Visualization Stage**:
+   - Plot performance metrics across model layers
+   - Compare different models and configurations
+
+## 🖥️ Usage
+
+### Dataset
+  - First of all, you will need to add your dataset in the `data` folder. You can use the provided examples as a reference.
+  - Next, you will need to create a JSON file with the dataset configuration. You can use the provided examples as a reference.
+  - Then, you are ready to run the pipeline.
+  
+### Basic Usage with `run.sh`
 
 ```bash
-python preprocess.py \
-    --hf_token <your_huggingface_token> \
-    --model <model_id> \
-    --data <data_keyword> \
-    --dtype <quantization_type> \
-    --inference_type <inference_type> \
-    --additional_prompt <additional_prompt> \
-    --gguf_filename <gguf_filename>
+./run.sh HF_TOKEN MODEL_NAME QUANTIZATION DATASET_CONFIG LAST_EMB MEAN_EMB WORD_EMB
+
+# Example
+./run.sh hf_token_here Qwen/Qwen2.5-7B-Instruct float16 mlsp.json true true true
 ```
 
-Arguments:
+### Manual Pipeline Execution
 
-*   `--hf_token`: Your Hugging Face token.
-*   `--model`: The Hugging Face model ID (e.g., `Qwen/Qwen2.5-0.5B`).
-*   `--data`: A keyword to identify the dataset configuration file (e.g., `bold_response_LH` or `mlsp_english`).
-*   `--dtype`: Quantization type (`bnb`, `float32`, `float16`, `awq`, `gptq`).
-*   `--inference_type`: Inference type (`forward` or `generate`).
-*   `--additional_prompt`: Optional additional prompt to add to the text.
-*   `--gguf_filename`: Optional GGUF filename to load from.
-
-The following arguments are automatically populated from the configuration file specified by the `--data` argument:
-
-*   `--data`: Path to the data file (TSV or CSV). Can be a local file or a Hugging Face dataset link.
-*   `--data_keyword`: A keyword to identify the dataset.
-*   `--text_column`: Name of the column containing the text.
-*   `--target_column`: Name of the column containing the target complexity scores.
-*   `--lang_column`: Name of the column containing the language of the text.
-*   `--id_column`: Name of the column containing unique IDs.
-*   `--word_column`: Name of the column containing the target word (for word-level tasks).
-*   `--task`: Task type (sentence or word).
-
-Example:
-
+1. **Preprocessing**:
 ```bash
-python preprocess.py \
-    --hf_token "your_token" \
-    --model "Qwen/Qwen2.5-0.5B" \
-    --data "mlsp_english" \
-    --dtype "bnb" \
-   
+python preprocess.py --hf_token YOUR_HF_TOKEN \
+                     --model MODEL_NAME \
+                     --dtype QUANTIZATION_TYPE \
+                     --dataset_config_file CONFIG_FILE
 ```
 
-This example uses the `mlsp_english_config.json` configuration file.
-
-### 2. Cross-Validation
-
-Run `cv.py` to perform cross-validation on the extracted embeddings.
-
+2. **Cross-Validation**:
 ```bash
-python cv.py \
-    --data <path_to_processed_data> \
-    --task <task_type> \
-    --params <path_to_model_params> \
-    --normalization <normalization_type> \
-    --model <model_name>
+python cv.py --data PROCESSED_DATASET_PATH \
+             --params REGRESSOR_CONFIG_FILE \
+             --normalization NORMALIZATION_TYPE \
+             --model REGRESSOR_MODEL_NAME
 ```
 
-Arguments:
-
-*   `--data`: Path to the processed data file (output of `preprocess.py`).
-*   `--task`: Task type (`sentence` or `word`).
-*   `--params`: Path to the model parameters JSON file (e.g., `ridge_regression.json`).  These files should be located in the `regressor_configurations` directory.
-*   `--normalization`: Normalization type (`l1`, `l2`, `standard`, `minmax`, `robust`, `maxabs`).
-*   `--model`: Model name (`ridge`, `rf`, `lr`, `svr`, `knn`, `mlp`, `lgbm`).
-
-Example:
-
+3. **Visualization**:
 ```bash
-python cv.py \
-    --data "multils_test_all_lcp_labels_bnb_forward_word/Qwen2.5-0.5B_0_1000.pkl" \
-    --task "word" \
-    --params "ridge_regression.json" \
-    --normalization "l1" \
-    --model "ridge"
+python plots.py --model MODEL_NAME \
+                --quant QUANTIZATION_TYPE \
+                --group_by GROUP_BY_PARAMETER
 ```
 
-### 3. Plotting Results
+## 📊 Regression Models
 
-Run `plots.py` to generate plots of the cross-validation results. The script will search the `results` directory for files to plot, and group the results based on the specified arguments.
+The pipeline supports various regression algorithms:
+- Ridge Regression
+- Random Forest
+- SVR (Support Vector Regression)
+- KNN (K-Nearest Neighbors)
+- Linear Regression
+- MLP (Multi-Layer Perceptron)
+- LightGBM
 
-```bash
-python plots.py \
-    --model <model_name> \
-    --quant <quantization_type> \
-    --group_by <grouping_option>
-```
+## 📈 Visualization
 
-Arguments:
+Visualization of results is handled by the `plots.py` script, which creates plots showing:
+- Pearson correlation vs. layer number
+- Comparison across different models and configurations
+- Performance with different quantization methods
 
-*   `--model`: Model name to filter results (e.g., `Qwen2.5-7B-Instruct`).
-*   `--quant`: Quantization type to filter results (e.g., `float16`).
-*   `--group_by`: Grouping option (`quant` or `model`).  Determines how the results are grouped and plotted.
+## 🔍 Example Workflow
 
-Example:
+1. Configure your dataset in a JSON file
+2. Run the preprocessing step to extract embeddings
+3. Perform cross-validation with different regression models
+4. Visualize the results across model layers
+5. Compare performance between models or configurations
 
-```bash
-python plots.py \
-    --model "Qwen2.5-7B-Instruct" \
-    --quant "float16" \
-    --group_by "quant"
-```
+## 📝 Requirements
 
-This example will generate a plot comparing the performance of different layers for the `Qwen2.5-7B-Instruct` model with `float16` quantization, grouped by quantization type.  The plot will be saved in the `plots` directory.
+- Python 3.10+
+- PyTorch
+- Transformers library
+- Scikit-learn
+- Pandas
+- NumPy
+- Matplotlib
+- LightGBM
+- Auto-GPTQ (optional, for GPTQ quantization)
+- AutoAWQ (optional, for AWQ quantization)
 
-## File Structure
 
-```
-├── preprocess.py       # Script for preprocessing data and extracting embeddings
-├── cv.py               # Script for cross-validation
-├── model.py            # Defines the Model class for loading and inference
-├── utils.py            # Utility functions
-├── plots.py            # Script for plotting results
-├── requirements.txt    # List of required packages
-├── .gitignore          # Git ignore file
-├── regressor_configurations/   # Directory for regressor parameter files
-│   └── ridge_regression.json # Example regressor parameter file
-├── logs/               # Directory for log files
-├── results/            # Directory for saving cross-validation results
-├── bold_response_config.json # Example dataset config file
-└── mlsp_english_config.json # Example dataset config file
-```
+## ⚠️ Known Issues
 
-## Notes
+- **Memory Management**: Large models may cause OOM errors on GPUs with limited VRAM. Currently, the code attempts to free memory but may not always succeed with very large models.
+- **Word level embedding**:  extraction may not work for some languages for compound words.
+``` example: "bèl·lica" in Catalan ```.
+- **Tokenizer restrictions**: The word level embedding extraction requires a fast tokenizer.
 
-*   The `regressor_configurations` directory should contain JSON files with parameters for different regression models.
-*   The `logs` directory will contain log files for each run of `preprocess.py`.
-*   The `results` directory will contain JSON files with cross-validation results.
-*   The `plots` directory will contain plots generated by `plots.py`.
-*   The code supports both sentence and word-level complexity prediction.
-*   The code supports different quantization methods for loading LLMs.
-*   The code supports different normalization methods for the embeddings.
-```
+## 🔮 Future Improvements
+
+- **Inplace Quantization**: Script for quantization of models for AWQ and GPTQ.
+- **New quantization methods**: Extend support for new quantization methods.
+- **Attention Visualization**: Include tools to visualize attention patterns alongside complexity predictions.
